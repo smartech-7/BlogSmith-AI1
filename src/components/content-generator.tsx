@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
+import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
 import { Loader2, Copy, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
@@ -37,6 +38,7 @@ const toneOptions = [
 export function ContentGenerator() {
   const [generatedContent, setGeneratedContent] = useState<GenerateBlogPostOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [seoKeywords, setSeoKeywords] = useState('');
   const { toast } = useToast();
   const [currentYear, setCurrentYear] = useState<number | null>(null);
 
@@ -59,8 +61,21 @@ export function ContentGenerator() {
     setIsLoading(true);
     setGeneratedContent(null);
     try {
-      const result = await generateBlogPost(data);
-      setGeneratedContent(result);
+      let blogPostResult = await generateBlogPost(data);
+
+      if (seoKeywords.trim()) {
+        toast({
+          title: "Optimizing for SEO...",
+          description: "Applying SEO keywords to your content.",
+        });
+        const seoResult = await optimizeForSeo({
+          content: blogPostResult.content,
+          keywords: seoKeywords,
+        });
+        blogPostResult = { ...blogPostResult, content: seoResult.optimizedContent };
+      }
+
+      setGeneratedContent(blogPostResult);
       toast({
         title: "Content Generated!",
         description: "Your blog post has been successfully generated.",
@@ -69,7 +84,7 @@ export function ContentGenerator() {
       console.error("Error generating content:", error);
       toast({
         title: "Error",
-        description: "Failed to generate content. Please try again.",
+        description: "Failed to generate content or apply SEO optimization. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -109,10 +124,10 @@ export function ContentGenerator() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card className="shadow-lg">
+      <Card className="shadow-lg rounded-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Create Your Blog Post</CardTitle>
-          <CardDescription>Enter a topic, select a tone, specify word count, and number of pictures to generate AI-powered content.</CardDescription>
+          <CardDescription>Enter a topic, select a tone, specify word count, and number of pictures to generate AI-powered content. Optionally, add SEO keywords.</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -180,6 +195,19 @@ export function ContentGenerator() {
                   </FormItem>
                 )}
               />
+               <FormItem>
+                <FormLabel>SEO Keywords (optional, comma-separated)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="e.g., sustainable gardening, organic soil"
+                    value={seoKeywords}
+                    onChange={(e) => setSeoKeywords(e.target.value)}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter keywords to optimize the blog post for search engines.
+                </FormDescription>
+              </FormItem>
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoading} className="w-full">
@@ -197,10 +225,10 @@ export function ContentGenerator() {
         </Form>
       </Card>
 
-      <Card className="shadow-lg">
+      <Card className="shadow-lg rounded-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Generated Content</CardTitle>
-          <CardDescription>IMAGE content that may include placeholders</CardDescription>
+          <CardDescription>Your AI-generated blog post will appear below. Images may include placeholders.</CardDescription>
         </CardHeader>
         <CardContent className="min-h-[300px] max-h-[calc(100vh-300px)] overflow-y-auto p-6 bg-muted/30 rounded-md">
           {isLoading && (
@@ -219,7 +247,7 @@ export function ContentGenerator() {
               <h2 className="text-xl font-semibold mb-2">{generatedContent.title}</h2>
               {generatedContent.imageUrls && generatedContent.imageUrls.length > 0 && (
                 <div className="my-4 space-y-4">
-                  <p className="text-sm font-medium text-muted-foreground">Content related images, consider placing auto:</p>
+                  <p className="text-sm font-medium text-muted-foreground">Content-related images (consider placing automatically or manually):</p>
                   {generatedContent.imageUrls.map((url, index) => (
                     <div key={index} className="rounded-md overflow-hidden shadow-md">
                       <Image 
@@ -255,4 +283,3 @@ export function ContentGenerator() {
     </div>
   );
 }
-
