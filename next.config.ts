@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
         fs: false, // Add fs: false to prevent bundling 'fs' module on client
         net: false, // Also common to add for Node.js specific modules
         tls: false, // Also common to add for Node.js specific modules
+        http2: false, // Add http2: false to prevent bundling 'http2' module on client
       };
     }
 
@@ -45,10 +46,9 @@ const nextConfig: NextConfig = {
         // unless a specific issue arises.
     } else {
         // For client-side, ensure problematic Node.js built-ins or packages are handled.
-        // We already handled async_hooks and fs. If other similar errors appear for modules like 'net', 'tls',
+        // We already handled async_hooks, fs, net, tls. If other similar errors appear for modules like 'http2',
         // they can be added here:
-        // net: false,
-        // tls: false,
+        // http2: false,
     }
     
     // Ensure that node-pre-gyp related paths are correctly ignored for client bundles
