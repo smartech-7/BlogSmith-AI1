@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,6 +20,7 @@ const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }).max(100, { message: "Topic must be at most 100 characters." }),
   tone: z.string().min(1, { message: "Please select a tone." }),
   numPictures: z.coerce.number().int().min(0, { message: "Number of pictures must be 0 or more." }).max(5, { message: "Number of pictures can be at most 5." }),
+  wordCount: z.coerce.number().int().min(50, { message: "Word count must be at least 50." }).max(2000, { message: "Word count must be at most 2000." }),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -37,6 +38,12 @@ export function ContentGenerator() {
   const [generatedContent, setGeneratedContent] = useState<GenerateBlogPostOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -44,6 +51,7 @@ export function ContentGenerator() {
       topic: '',
       tone: '',
       numPictures: 1,
+      wordCount: 500,
     },
   });
 
@@ -71,7 +79,9 @@ export function ContentGenerator() {
 
   const handleCopy = () => {
     if (generatedContent?.content) {
-      navigator.clipboard.writeText(generatedContent.content);
+      // Preserve line breaks for copying plain text
+      const textToCopy = generatedContent.content.replace(/<br\s*\/?>/gi, '\n');
+      navigator.clipboard.writeText(textToCopy);
       toast({
         title: "Copied!",
         description: "Content copied to clipboard.",
@@ -81,10 +91,12 @@ export function ContentGenerator() {
 
   const handleExport = () => {
     if (generatedContent) {
-      const blob = new Blob([`Title: ${generatedContent.title}\n\n${generatedContent.content}`], { type: 'text/plain;charset=utf-8' });
+       // Preserve line breaks for export
+      const textToExport = `Title: ${generatedContent.title}\n\n${generatedContent.content.replace(/<br\s*\/?>/gi, '\n')}`;
+      const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${generatedContent.title.replace(/\s+/g, '_')}.txt`;
+      link.download = `${generatedContent.title.replace(/\s+/g, '_') || 'blog_post'}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -100,7 +112,7 @@ export function ContentGenerator() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Create Your Blog Post</CardTitle>
-          <CardDescription>Enter a topic, tone, and number of pictures to generate AI-powered content.</CardDescription>
+          <CardDescription>Enter a topic, tone, word count, and number of pictures to generate AI-powered content.</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -144,6 +156,19 @@ export function ContentGenerator() {
               />
               <FormField
                 control={form.control}
+                name="wordCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Desired Word Count (50-2000)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="50" max="2000" placeholder="e.g., 500" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="numPictures"
                 render={({ field }) => (
                   <FormItem>
@@ -175,9 +200,9 @@ export function ContentGenerator() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Generated Content</CardTitle>
-          <CardDescription>Review your AI-generated blog post below.</CardDescription>
+          <CardDescription>Review your AI-generated blog post below. Images are listed first, followed by content that may include placeholders like [IMAGE_PLACEHOLDER_1] suggesting where they could be inserted.</CardDescription>
         </CardHeader>
-        <CardContent className="min-h-[300px] max-h-[calc(100vh-280px)] overflow-y-auto p-6 bg-muted/30 rounded-md">
+        <CardContent className="min-h-[300px] max-h-[calc(100vh-300px)] overflow-y-auto p-6 bg-muted/30 rounded-md">
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -194,6 +219,7 @@ export function ContentGenerator() {
               <h2 className="text-xl font-semibold mb-2">{generatedContent.title}</h2>
               {generatedContent.imageUrls && generatedContent.imageUrls.length > 0 && (
                 <div className="my-4 space-y-4">
+                  <p className="text-sm font-medium text-muted-foreground">Generated Images (Consider placing these where [IMAGE_PLACEHOLDER_X] appears in the text):</p>
                   {generatedContent.imageUrls.map((url, index) => (
                     <div key={index} className="rounded-md overflow-hidden shadow-md">
                       <Image 
@@ -202,8 +228,8 @@ export function ContentGenerator() {
                         width={600} 
                         height={400}
                         className="w-full h-auto object-cover"
-                        data-ai-hint="blog post illustration"
-                        priority={index === 0} // Prioritize first image for LCP
+                        data-ai-hint="blog illustration"
+                        priority={index === 0} 
                       />
                     </div>
                   ))}
