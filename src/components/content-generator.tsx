@@ -219,7 +219,7 @@ export function ContentGenerator() {
               <h2 className="text-xl font-semibold mb-2">{generatedContent.title}</h2>
               {generatedContent.imageUrls && generatedContent.imageUrls.length > 0 && (
                 <div className="my-4 space-y-4">
-                  <p className="text-sm font-medium text-muted-foreground">Generated Images (Content related images, consider placing these where [IMAGE_PLACEHOLDER_X] appears in the text):</p>
+                  <p className="text-sm font-medium text-muted-foreground">Content related images, consider placing auto:</p>
                   {generatedContent.imageUrls.map((url, index) => (
                     <div key={index} className="rounded-md overflow-hidden shadow-md">
                       <Image 
