@@ -27,6 +27,9 @@ const nextConfig: NextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         async_hooks: false,
+        fs: false, // Add fs: false to prevent bundling 'fs' module on client
+        net: false, // Also common to add for Node.js specific modules
+        tls: false, // Also common to add for Node.js specific modules
       };
     }
 
@@ -42,9 +45,8 @@ const nextConfig: NextConfig = {
         // unless a specific issue arises.
     } else {
         // For client-side, ensure problematic Node.js built-ins or packages are handled.
-        // We already handled async_hooks. If other similar errors appear for modules like 'fs', 'net', 'tls',
+        // We already handled async_hooks and fs. If other similar errors appear for modules like 'net', 'tls',
         // they can be added here:
-        // fs: false,
         // net: false,
         // tls: false,
     }
@@ -65,3 +67,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
