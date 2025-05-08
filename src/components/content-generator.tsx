@@ -40,12 +40,6 @@ export function ContentGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [seoKeywords, setSeoKeywords] = useState('');
   const { toast } = useToast();
-  const [currentYear, setCurrentYear] = useState<number | null>(null);
-
-  useEffect(() => {
-    setCurrentYear(new Date().getFullYear());
-  }, []);
-
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -283,3 +277,4 @@ export function ContentGenerator() {
     </div>
   );
 }
+
