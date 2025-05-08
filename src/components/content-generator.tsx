@@ -121,7 +121,9 @@ export function ContentGenerator() {
       <Card className="shadow-lg rounded-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Create Your Blog Post</CardTitle>
-          <CardDescription>Enter a topic, select a tone, specify word count, and number of pictures to generate AI-powered content. Optionally, add SEO keywords.</CardDescription>
+          <CardDescription>
+            Effortlessly create high-quality, engaging content. Boost discoverability with SEO optimization and generate visually appealing posts with modern aesthetics. Simply provide a topic, tone, and desired length.
+          </CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
