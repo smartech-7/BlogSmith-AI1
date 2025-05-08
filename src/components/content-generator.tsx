@@ -14,13 +14,24 @@ import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/genera
 import { Loader2, Copy, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }).max(100, { message: "Topic must be at most 100 characters." }),
-  keywords: z.string().min(3, { message: "Keywords must be at least 3 characters." }).max(200, { message: "Keywords must be at most 200 characters." }),
+  tone: z.string().min(1, { message: "Please select a tone." }),
+  numPictures: z.coerce.number().int().min(0, { message: "Number of pictures must be 0 or more." }).max(5, { message: "Number of pictures can be at most 5." }),
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+const toneOptions = [
+  { value: "formal", label: "Formal" },
+  { value: "casual", label: "Casual" },
+  { value: "humorous", label: "Humorous" },
+  { value: "professional", label: "Professional" },
+  { value: "informative", label: "Informative" },
+  { value: "engaging", label: "Engaging" },
+];
 
 export function ContentGenerator() {
   const [generatedContent, setGeneratedContent] = useState<GenerateBlogPostOutput | null>(null);
@@ -31,7 +42,8 @@ export function ContentGenerator() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: '',
-      keywords: '',
+      tone: '',
+      numPictures: 1,
     },
   });
 
@@ -88,7 +100,7 @@ export function ContentGenerator() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Create Your Blog Post</CardTitle>
-          <CardDescription>Enter a topic and keywords to generate AI-powered content.</CardDescription>
+          <CardDescription>Enter a topic, tone, and number of pictures to generate AI-powered content.</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -108,12 +120,36 @@ export function ContentGenerator() {
               />
               <FormField
                 control={form.control}
-                name="keywords"
+                name="tone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Keywords</FormLabel>
+                    <FormLabel>How should it sound? (Tone)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a tone" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {toneOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="numPictures"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How many pictures? (0-5)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., solar, wind, sustainability, innovation" {...field} />
+                      <Input type="number" min="0" max="5" placeholder="e.g., 2" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -141,7 +177,7 @@ export function ContentGenerator() {
           <CardTitle className="text-2xl">Generated Content</CardTitle>
           <CardDescription>Review your AI-generated blog post below.</CardDescription>
         </CardHeader>
-        <CardContent className="min-h-[300px] max-h-[600px] overflow-y-auto p-6 bg-muted/30 rounded-md">
+        <CardContent className="min-h-[300px] max-h-[calc(100vh-280px)] overflow-y-auto p-6 bg-muted/30 rounded-md">
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -156,17 +192,21 @@ export function ContentGenerator() {
           {generatedContent && (
             <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
               <h2 className="text-xl font-semibold mb-2">{generatedContent.title}</h2>
-              {generatedContent.imageUrl && (
-                <div className="my-4 rounded-md overflow-hidden shadow-md">
-                  <Image 
-                    src={generatedContent.imageUrl} 
-                    alt={generatedContent.title || "Generated blog image"} 
-                    width={600} 
-                    height={400}
-                    className="w-full h-auto object-cover"
-                    data-ai-hint="blog post illustration"
-                    priority={false} // Only set to true if it's LCP
-                  />
+              {generatedContent.imageUrls && generatedContent.imageUrls.length > 0 && (
+                <div className="my-4 space-y-4">
+                  {generatedContent.imageUrls.map((url, index) => (
+                    <div key={index} className="rounded-md overflow-hidden shadow-md">
+                      <Image 
+                        src={url} 
+                        alt={`${generatedContent.title || "Generated blog image"} ${index + 1}`} 
+                        width={600} 
+                        height={400}
+                        className="w-full h-auto object-cover"
+                        data-ai-hint="blog post illustration"
+                        priority={index === 0} // Prioritize first image for LCP
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
               <div dangerouslySetInnerHTML={{ __html: generatedContent.content.replace(/\n/g, '<br />') }} />
