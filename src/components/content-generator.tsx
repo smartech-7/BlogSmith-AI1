@@ -112,7 +112,7 @@ export function ContentGenerator() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Create Your Blog Post</CardTitle>
-          <CardDescription>Enter a topic, tone, word count, and number of pictures to generate AI-powered content.</CardDescription>
+          <CardDescription>Enter a topic, select a tone, specify word count, and number of pictures to generate AI-powered content.</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -159,7 +159,7 @@ export function ContentGenerator() {
                 name="wordCount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Desired Word Count (50-2000)</FormLabel>
+                    <FormLabel>How long should it be? (Word Count 50-2000)</FormLabel>
                     <FormControl>
                       <Input type="number" min="50" max="2000" placeholder="e.g., 500" {...field} />
                     </FormControl>
@@ -200,7 +200,7 @@ export function ContentGenerator() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Generated Content</CardTitle>
-          <CardDescription>Review your AI-generated blog post below. Images are listed first, followed by content that may include placeholders like [IMAGE_PLACEHOLDER_1] suggesting where they could be inserted.</CardDescription>
+          <CardDescription>IMAGE content that may include placeholders</CardDescription>
         </CardHeader>
         <CardContent className="min-h-[300px] max-h-[calc(100vh-300px)] overflow-y-auto p-6 bg-muted/30 rounded-md">
           {isLoading && (
@@ -219,7 +219,7 @@ export function ContentGenerator() {
               <h2 className="text-xl font-semibold mb-2">{generatedContent.title}</h2>
               {generatedContent.imageUrls && generatedContent.imageUrls.length > 0 && (
                 <div className="my-4 space-y-4">
-                  <p className="text-sm font-medium text-muted-foreground">Generated Images (Consider placing these where [IMAGE_PLACEHOLDER_X] appears in the text):</p>
+                  <p className="text-sm font-medium text-muted-foreground">Generated Images (Content related images, consider placing these where [IMAGE_PLACEHOLDER_X] appears in the text):</p>
                   {generatedContent.imageUrls.map((url, index) => (
                     <div key={index} className="rounded-md overflow-hidden shadow-md">
                       <Image 
@@ -255,3 +255,4 @@ export function ContentGenerator() {
     </div>
   );
 }
+
