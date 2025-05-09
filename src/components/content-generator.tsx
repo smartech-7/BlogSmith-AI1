@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -14,7 +13,7 @@ import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/a
 import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
 import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
+// Image component from next/image is no longer used for blog post images directly in dangerouslySetInnerHTML
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform';
@@ -130,34 +129,54 @@ export function ContentGenerator() {
 
   const handleCopy = (text: string | undefined) => {
     if (text) {
-      const textToCopy = text.replace(/<br\s*\/?>/gi, '\n');
+      // Create a temporary element to parse HTML and get text content
+      const tempEl = document.createElement('div');
+      // Replace <br /> with newlines for clipboard, and remove image tags for text-only copy
+      tempEl.innerHTML = text.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
+      const textToCopy = tempEl.textContent || tempEl.innerText || "";
       navigator.clipboard.writeText(textToCopy);
-      toast({ title: "Copied!", description: "Content copied to clipboard." });
+      toast({ title: "Copied!", description: "Text content copied to clipboard." });
     }
   };
   
   const handleExport = (title: string | undefined, content: string | undefined, type: "Blog Post" | "Social Media Post") => {
-    if (title && content) {
-      const textToExport = type === "Blog Post" ? `Title: ${title}\n\n${content.replace(/<br\s*\/?>/gi, '\n')}` : content.replace(/<br\s*\/?>/gi, '\n');
+     if (content) {
+      // Create a temporary element to parse HTML and get text content
+      const tempEl = document.createElement('div');
+       // Replace <br /> with newlines for export, and remove image tags for text-only export
+      tempEl.innerHTML = content.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
+      const textContentToExport = tempEl.textContent || tempEl.innerText || "";
+      
+      const textToExport = type === "Blog Post" && title ? `Title: ${title}\n\n${textContentToExport}` : textContentToExport;
+      
       const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${title.replace(/\s+/g, '_') || type.toLowerCase().replace(/\s+/g, '_')}.txt`;
+      link.download = `${(title || type).replace(/\s+/g, '_').toLowerCase()}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast({ title: "Exported!", description: `${type} exported as a .txt file.` });
-    } else if (content) { // For social media posts that might not have a title
-       const textToExport = content.replace(/<br\s*\/?>/gi, '\n');
-       const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
-       const link = document.createElement('a');
-       link.href = URL.createObjectURL(blob);
-       link.download = `${type.toLowerCase().replace(/\s+/g, '_')}.txt`;
-       document.body.appendChild(link);
-       link.click();
-       document.body.removeChild(link);
-       toast({ title: "Exported!", description: `${type} exported as a .txt file.` });
+      toast({ title: "Exported!", description: `${type} (text only) exported as a .txt file.` });
     }
+  };
+
+  const renderBlogContent = (blogPost: GenerateBlogPostOutput) => {
+    let processedContent = blogPost.content.replace(/\n/g, '<br />');
+
+    if (blogPost.imageUrls && blogPost.imageUrls.length > 0) {
+      processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, (match, p1) => {
+        const imageIndex = parseInt(p1, 10) - 1;
+        if (blogPost.imageUrls && imageIndex >= 0 && imageIndex < blogPost.imageUrls.length) {
+          const imageUrl = blogPost.imageUrls[imageIndex];
+          return `<figure class="my-6 flex justify-center"><img src="${imageUrl}" alt="${blogPost.title || "Generated blog image"} ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
+        }
+        return ''; // Remove placeholder if no corresponding image
+      });
+    } else {
+      // If no imageUrls array, or it's empty, still remove any placeholders
+      processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "");
+    }
+    return { __html: processedContent };
   };
 
 
@@ -228,6 +247,7 @@ export function ContentGenerator() {
                         <FormItem>
                           <FormLabel>How many pictures? (0-5)</FormLabel>
                           <FormControl><Input aria-label="Number of pictures for blog post" type="number" min="0" max="5" placeholder="e.g., 2" {...field} /></FormControl>
+                          <FormDescription>AI will place images where appropriate in the content.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -298,14 +318,14 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="shadow-xl rounded-lg border-primary/10 border sticky top-20">
+          <Card className="shadow-xl rounded-lg border-primary/10 border sticky top-6 h-[calc(100vh-3rem)] flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
-                Your AI-generated content will appear below. {activeTab === "blog" ? "Blog images are illustrative." : ""}
+                Your AI-generated content will appear below.
               </CardDescription>
             </CardHeader>
-            <CardContent className="min-h-[calc(100vh-320px)] max-h-[calc(100vh-200px)] overflow-y-auto p-6 bg-muted/30 rounded-md space-y-4">
+            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
               {isLoading && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -323,20 +343,8 @@ export function ContentGenerator() {
 
               {generatedBlogPost && activeTab === "blog" && (
                 <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
-                  <h3 className="text-xl font-semibold mb-2 border-b pb-2">{generatedBlogPost.title}</h3>
-                  {generatedBlogPost.imageUrls && generatedBlogPost.imageUrls.length > 0 && (
-                    <div className="my-4 space-y-4">
-                      <p className="text-sm font-medium text-muted-foreground">Content-related images (AI Generated):</p>
-                      <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-${Math.min(generatedBlogPost.imageUrls.length, 3)} gap-4`}>
-                        {generatedBlogPost.imageUrls.map((url, index) => (
-                          <div key={`blog-img-${index}`} className="rounded-md overflow-hidden shadow-md aspect-video">
-                            <Image src={url} alt={`${generatedBlogPost.title || "Generated blog image"} ${index + 1}`} width={300} height={200} className="w-full h-full object-cover" data-ai-hint="blog illustration" priority={index === 0} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div dangerouslySetInnerHTML={{ __html: generatedBlogPost.content.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "").replace(/\n/g, '<br />') }} />
+                  <h3 className="text-xl font-semibold mb-4 border-b pb-2">{generatedBlogPost.title}</h3>
+                  <div dangerouslySetInnerHTML={renderBlogContent(generatedBlogPost)} />
                 </article>
               )}
 
@@ -352,8 +360,8 @@ export function ContentGenerator() {
                  </article>
               )}
             </CardContent>
-            {(generatedBlogPost && activeTab === "blog") || (generatedSocialMediaPost && activeTab === "social") ? (
-              <CardFooter className="flex justify-end space-x-2 pt-4 border-t">
+            {((generatedBlogPost && activeTab === "blog") || (generatedSocialMediaPost && activeTab === "social")) && !isLoading ? (
+              <CardFooter className="flex justify-end space-x-2 pt-4 border-t bg-background rounded-b-lg">
                 <Button variant="outline" onClick={() => handleCopy(activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent)}>
                   <Copy className="mr-2 h-4 w-4" />Copy Text
                 </Button>
