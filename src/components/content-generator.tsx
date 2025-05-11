@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,13 +11,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
 import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
-import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks } from 'lucide-react';
+import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { socialMediaPlatforms, SocialMediaPlatformSchema } from '@/ai/schemas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SuggestHeadingsTool } from '@/components/suggest-headings-tool';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 const blogFormSchema = z.object({
@@ -79,6 +81,7 @@ export function ContentGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"blog" | "social" | "headings">("blog");
   const { toast } = useToast();
+  const blogContentRef = useRef<HTMLElement>(null);
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
@@ -180,11 +183,82 @@ export function ContentGenerator() {
       const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${(title || type).replace(/\s+/g, '_').toLowerCase()}.txt`;
+      link.download = `${(title || type).replace(/[^\w\s]/gi, '').replace(/\s+/g, '_').toLowerCase()}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       toast({ title: "Exported!", description: `${type} (text only) exported as a .txt file.` });
+    }
+  };
+
+  const handleExportPdf = async () => {
+    const input = blogContentRef.current;
+    if (!input || !generatedBlogPost) {
+      toast({ title: "Error", description: "No blog content to export as PDF.", variant: "destructive" });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // in mm
+      // const pdfHeight = pdf.internal.pageSize.getHeight(); // in mm
+
+      const canvasWidth = imgProps.width;
+      const canvasHeight = imgProps.height;
+
+      // Calculate the height of the image on the PDF page, fitting the width
+      const scaledImgHeight = (canvasHeight * pdfWidth) / canvasWidth;
+
+      let positionOnCanvas = 0; // Current y position on the source image (canvas)
+      
+      while (positionOnCanvas < canvasHeight) {
+        // Height of the image chunk to take from the canvas, in canvas pixels
+        // This corresponds to one PDF page height, scaled back to canvas pixel dimensions
+        const sourceChunkHeight = Math.min(
+          canvasHeight - positionOnCanvas, 
+          pdf.internal.pageSize.getHeight() * (canvasWidth / pdfWidth) 
+        );
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvasWidth;
+        tempCanvas.height = sourceChunkHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        if (tempCtx) {
+          // Draw the portion of the original canvas onto the temporary canvas
+          tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeight, 0, 0, canvasWidth, sourceChunkHeight);
+          const pageImgData = tempCanvas.toDataURL('image/png');
+
+          if (positionOnCanvas > 0) {
+            pdf.addPage();
+          }
+          // Add the image from the temporary canvas to the PDF page, scaled to fit PDF page width
+          pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, sourceChunkHeight * (pdfWidth / canvasWidth));
+          positionOnCanvas += sourceChunkHeight;
+        } else {
+          throw new Error("Could not create temporary canvas context for PDF generation.");
+        }
+      }
+
+      pdf.save(`${generatedBlogPost.title?.replace(/[^\w\s]/gi, '').replace(/\s+/g, '_').toLowerCase() || 'blog_post'}.pdf`);
+      toast({ title: "PDF Exported!", description: "Blog post exported as PDF." });
+
+    } catch (error: any) {
+      console.error("Error exporting PDF:", error);
+      toast({ title: "Error Exporting PDF", description: `Failed to export blog post as PDF. ${error.message}`, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -198,7 +272,6 @@ export function ContentGenerator() {
         if (imageIndex >= 0 && imageIndex < blogPost.imageUrls!.length) {
           const imageUrl = blogPost.imageUrls![imageIndex];
           const altText = blogPost.title || blogForm.getValues('mainKeyword') || `Generated blog image ${imageIndex + 1}`;
-          // Use picsum for placeholders or actual URL if available
           const finalImageUrl = imageUrl.startsWith('https://picsum.photos') ? imageUrl : imageUrl; 
           return `<figure class="my-6 flex justify-center"><img src="${finalImageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
@@ -389,9 +462,8 @@ export function ContentGenerator() {
                   </div>
               )}
 
-
               {generatedBlogPost && activeTab === "blog" && (
-                <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
+                <article ref={blogContentRef} className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
                   {generatedBlogPost.thumbnailUrl && (
                     <figure className="mb-6">
                       <img
@@ -424,12 +496,17 @@ export function ContentGenerator() {
                 <Button variant="outline" onClick={() => handleCopy(activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent)}>
                   <Copy className="mr-2 h-4 w-4" />Copy Text
                 </Button>
+                {generatedBlogPost && activeTab === "blog" && (
+                  <Button variant="outline" onClick={handleExportPdf} disabled={isLoading}>
+                    <Printer className="mr-2 h-4 w-4" />Export PDF
+                  </Button>
+                )}
                 <Button variant="default" onClick={() => handleExport(
                   activeTab === "blog" ? generatedBlogPost?.title : socialMediaForm.getValues('platform'),
                   activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent,
                   activeTab === "blog" ? "Blog Post" : "Social Media Post"
                 )}>
-                  <Download className="mr-2 h-4 w-4" />Export
+                  <Download className="mr-2 h-4 w-4" />Export Text
                 </Button>
               </CardFooter>
             ) : null}
@@ -439,5 +516,3 @@ export function ContentGenerator() {
     </>
   );
 }
-
-    
