@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,12 +11,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
 import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
-import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2 } from 'lucide-react';
+import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas';
+import { socialMediaPlatforms, SocialMediaPlatformSchema } from '@/ai/schemas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SuggestHeadingsTool } from '@/components/suggest-headings-tool';
 
 
 const blogFormSchema = z.object({
@@ -76,7 +77,7 @@ export function ContentGenerator() {
   const [generatedBlogPost, setGeneratedBlogPost] = useState<GenerateBlogPostOutput | null>(null);
   const [generatedSocialMediaPost, setGeneratedSocialMediaPost] = useState<GenerateSocialMediaPostOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"blog" | "social">("blog");
+  const [activeTab, setActiveTab] = useState<"blog" | "social" | "headings">("blog");
   const { toast } = useToast();
 
   const blogForm = useForm<BlogFormData>({
@@ -88,6 +89,13 @@ export function ContentGenerator() {
     resolver: zodResolver(socialMediaFormSchema),
     defaultValues: { topic: "", platform: "Twitter", instructions: "" },
   });
+
+  useEffect(() => {
+    if (activeTab === 'headings') {
+      setGeneratedBlogPost(null);
+      setGeneratedSocialMediaPost(null);
+    }
+  }, [activeTab]);
 
   const onBlogSubmit = async (data: BlogFormData) => {
     setIsLoading(true);
@@ -190,7 +198,9 @@ export function ContentGenerator() {
         if (imageIndex >= 0 && imageIndex < blogPost.imageUrls!.length) {
           const imageUrl = blogPost.imageUrls![imageIndex];
           const altText = blogPost.title || blogForm.getValues('mainKeyword') || `Generated blog image ${imageIndex + 1}`;
-          return `<figure class="my-6 flex justify-center"><img src="${imageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
+          // Use picsum for placeholders or actual URL if available
+          const finalImageUrl = imageUrl.startsWith('https://picsum.photos') ? imageUrl : imageUrl; 
+          return `<figure class="my-6 flex justify-center"><img src="${finalImageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
         return ''; 
       });
@@ -226,10 +236,11 @@ export function ContentGenerator() {
     
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <Tabs defaultValue="blog" onValueChange={(value) => setActiveTab(value as "blog" | "social")} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+          <Tabs defaultValue="blog" onValueChange={(value) => setActiveTab(value as "blog" | "social" | "headings")} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="blog"><Sparkles className="mr-2 h-5 w-5" />Blog Post</TabsTrigger>
               <TabsTrigger value="social"><MessageSquare className="mr-2 h-5 w-5" />Social Media</TabsTrigger>
+              <TabsTrigger value="headings"><ListChecks className="mr-2 h-5 w-5" />Suggest Headings</TabsTrigger>
             </TabsList>
             <TabsContent value="blog">
               <Card className="shadow-xl rounded-lg border-primary/20 border bg-card">
@@ -285,8 +296,8 @@ export function ContentGenerator() {
                       )} />
                     </CardContent>
                     <CardFooter>
-                      <Button type="submit" disabled={isLoading} className="w-full text-lg py-6">
-                        {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Generating Blog...</> : <><Sparkles className="mr-2 h-5 w-5" />Generate Blog Post</>}
+                      <Button type="submit" disabled={isLoading && activeTab === 'blog'} className="w-full text-lg py-6">
+                        {isLoading && activeTab === 'blog' ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Generating Blog...</> : <><Sparkles className="mr-2 h-5 w-5" />Generate Blog Post</>}
                       </Button>
                     </CardFooter>
                   </form>
@@ -333,13 +344,16 @@ export function ContentGenerator() {
                       )} />
                     </CardContent>
                     <CardFooter>
-                      <Button type="submit" disabled={isLoading} className="w-full text-lg py-6">
-                        {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Generating Post...</> : <><MessageSquare className="mr-2 h-5 w-5" />Generate Social Post</>}
+                      <Button type="submit" disabled={isLoading && activeTab === 'social'} className="w-full text-lg py-6">
+                        {isLoading && activeTab === 'social' ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Generating Post...</> : <><MessageSquare className="mr-2 h-5 w-5" />Generate Social Post</>}
                       </Button>
                     </CardFooter>
                   </form>
                 </Form>
               </Card>
+            </TabsContent>
+            <TabsContent value="headings">
+              <SuggestHeadingsTool />
             </TabsContent>
           </Tabs>
         </div>
@@ -349,24 +363,32 @@ export function ContentGenerator() {
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
-                Your AI-generated content will appear below. Review, copy, or export it.
+                {activeTab === 'headings' ? 'Switch to Blog Post or Social Media tab to see generated content.' : 'Your AI-generated content will appear below. Review, copy, or export it.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
-              {isLoading && (
+              {isLoading && (activeTab === 'blog' || activeTab === 'social') && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
                   <p className="text-lg font-semibold text-foreground">Crafting Brilliance...</p>
                   <p className="text-muted-foreground">Your AI assistant is hard at work. Please wait a moment.</p>
                 </div>
               )}
-              {!isLoading && !generatedBlogPost && !generatedSocialMediaPost && (
+              {!isLoading && !generatedBlogPost && !generatedSocialMediaPost && activeTab !== 'headings' && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                     <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
                   <p className="text-lg text-muted-foreground">Your generated content will appear here.</p>
                   <p className="text-sm text-muted-foreground/80">Fill the form on the left and let the magic happen!</p>
                   </div>
               )}
+              {activeTab === 'headings' && !isLoading && (
+                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                    <ListChecks className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                  <p className="text-lg text-muted-foreground">Heading suggestions appear in the left panel.</p>
+                  <p className="text-sm text-muted-foreground/80">This area is for final blog or social media content.</p>
+                  </div>
+              )}
+
 
               {generatedBlogPost && activeTab === "blog" && (
                 <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
@@ -417,3 +439,5 @@ export function ContentGenerator() {
     </>
   );
 }
+
+    
