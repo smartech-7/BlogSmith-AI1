@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,11 +11,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
 import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
-import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2 } from 'lucide-react';
+import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform';
+import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -96,7 +96,17 @@ export function ContentGenerator() {
     try {
       const blogPostResult = await generateBlogPost(data);
       if (!blogPostResult || !blogPostResult.title || !blogPostResult.content) {
-        throw new Error("The AI failed to generate the blog post content as expected. This might be due to the complexity of the request or an internal issue. Please try simplifying your keywords or topic, or try again later.");
+         let detailedError = "The AI model did not return the expected title or content.";
+        if (!blogPostResult) {
+            detailedError = "The AI model returned no output.";
+        } else if (!blogPostResult.title && !blogPostResult.content) {
+            detailedError = "The AI model returned neither title nor content.";
+        } else if (!blogPostResult.title) {
+            detailedError = "The AI model did not return a title.";
+        } else if (!blogPostResult.content) {
+            detailedError = "The AI model did not return content.";
+        }
+        throw new Error(detailedError);
       }
       setGeneratedBlogPost(blogPostResult);
       toast({ title: "Blog Post Generated!", description: "Your blog post has been successfully generated." });
@@ -173,20 +183,18 @@ export function ContentGenerator() {
   const renderBlogContent = (blogPost: GenerateBlogPostOutput) => {
     let processedContent = blogPost.content.replace(/\n\n+/g, '<br /><br />').replace(/\n/g, '<br />');
 
-
     if (blogPost.imageUrls && blogPost.imageUrls.length > 0) {
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, (match, p1) => {
         const imageIndex = parseInt(p1, 10) - 1;
-        if (blogPost.imageUrls && imageIndex >= 0 && imageIndex < blogPost.imageUrls.length) {
-          const imageUrl = blogPost.imageUrls[imageIndex];
-          // Use mainKeyword for alt text if title is not available, or a generic fallback
-          const altText = blogPost.title || blogForm.getValues('mainKeyword') || "Generated blog image";
+        
+        if (imageIndex >= 0 && imageIndex < blogPost.imageUrls!.length) {
+          const imageUrl = blogPost.imageUrls![imageIndex];
+          const altText = blogPost.title || blogForm.getValues('mainKeyword') || `Generated blog image ${imageIndex + 1}`;
           return `<figure class="my-6 flex justify-center"><img src="${imageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
         return ''; 
       });
     } else {
-      // Remove placeholders if no images were generated or requested for them
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "");
     }
     return { __html: processedContent };
@@ -271,7 +279,7 @@ export function ContentGenerator() {
                         <FormItem>
                           <FormLabel>How many pictures? (0-5)</FormLabel>
                           <FormControl><Input aria-label="Number of pictures for blog post" type="number" min="0" max="5" placeholder="e.g., 2" {...field} /></FormControl>
-                          <FormDescription>AI will place images where appropriate in the content.</FormDescription>
+                          <FormDescription>AI will place images where appropriate in the content. The first image will be used as a thumbnail.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -362,6 +370,16 @@ export function ContentGenerator() {
 
               {generatedBlogPost && activeTab === "blog" && (
                 <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
+                  {generatedBlogPost.thumbnailUrl && (
+                    <figure className="mb-6">
+                      <img
+                        src={generatedBlogPost.thumbnailUrl}
+                        alt={generatedBlogPost.title || "Blog post thumbnail"}
+                        className="w-full h-auto max-h-96 object-cover rounded-lg shadow-lg border border-border"
+                        data-ai-hint="blog thumbnail"
+                      />
+                    </figure>
+                  )}
                   <h3 className="text-xl font-semibold mb-4 border-b pb-2">{generatedBlogPost.title}</h3>
                   <div dangerouslySetInnerHTML={renderBlogContent(generatedBlogPost)} />
                 </article>
@@ -399,4 +417,3 @@ export function ContentGenerator() {
     </>
   );
 }
-

@@ -25,6 +25,7 @@ const GenerateBlogPostOutputSchema = z.object({
   title: z.string().describe('The title of the blog post.'),
   content: z.string().describe('The generated blog post content, potentially including image placeholders like [IMAGE_PLACEHOLDER_1].'),
   imageUrls: z.array(z.string()).optional().describe('Optional URLs for images related to the blog post.'),
+  thumbnailUrl: z.string().optional().describe('Optional URL for the primary thumbnail image of the blog post.'),
 });
 export type GenerateBlogPostOutput = z.infer<typeof GenerateBlogPostOutputSchema>;
 
@@ -65,7 +66,7 @@ SEO Tips to follow:
 
 If images are requested (number of images > 0), you MUST include exactly {{{numPictures}}} placeholders in the generated content where images would be most appropriate and contextually relevant. Use placeholders in the format "[IMAGE_PLACEHOLDER_1]", "[IMAGE_PLACEHOLDER_2]", etc., directly within the text. These placeholders will be replaced by actual images later. Ensure these placeholders are naturally integrated into the flow of the content. For example, if numPictures is 2, include "[IMAGE_PLACEHOLDER_1]" and "[IMAGE_PLACEHOLDER_2]".
 
-Important: The generated title and content must be plain text suitable for direct pasting into platforms like Google Blogger. Do not use any special characters or symbols other than standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses. Avoid any markdown formatting (e.g., no '###' heading markers, no '***' horizontal rules, no triple backticks \`\`\`). Output the entire article (Introduction, Body, Conclusion) as a single string for the 'content' field.
+Important: The generated title and content must be plain text suitable for direct pasting into platforms like Google Blogger. Do not use any special characters or symbols other than standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses. Avoid any markdown formatting (e.g., no heading markers like '###', no horizontal rules like '***', no triple backticks \`\`\`). Output the entire article (Introduction, Body, Conclusion) as a single string for the 'content' field.
 `,
 });
 
@@ -104,7 +105,17 @@ const generateBlogPostFlow = ai.defineFlow(
     });
 
     if (!blogContentOutput || !blogContentOutput.title || !blogContentOutput.content) {
-      throw new Error("Failed to generate blog post title or content from the AI model. The response might have been empty or incomplete.");
+       let detailedError = "The AI model did not return the expected title or content.";
+        if (!blogContentOutput) {
+            detailedError = "The AI model returned no output.";
+        } else if (!blogContentOutput.title && !blogContentOutput.content) {
+            detailedError = "The AI model returned neither title nor content.";
+        } else if (!blogContentOutput.title) {
+            detailedError = "The AI model did not return a title.";
+        } else if (!blogContentOutput.content) {
+            detailedError = "The AI model did not return content.";
+        }
+      throw new Error(`Failed to generate blog post: ${detailedError} This might be due to the complexity of the request, an internal issue with the AI, or safety filters blocking the content. Please try simplifying your keywords or topic, ensure it complies with content policies, or try again later.`);
     }
 
     const imageUrls: string[] = [];
@@ -117,8 +128,8 @@ const generateBlogPostFlow = ai.defineFlow(
         
         const placeholderIndex = content.indexOf(placeholder);
         if (placeholderIndex !== -1) {
-          const contextStart = Math.max(0, placeholderIndex - 150); // Increased context window
-          const contextEnd = Math.min(content.length, placeholderIndex + placeholder.length + 150); // Increased context window
+          const contextStart = Math.max(0, placeholderIndex - 150); 
+          const contextEnd = Math.min(content.length, placeholderIndex + placeholder.length + 150); 
           imageContext = content.substring(contextStart, contextEnd);
         }
 
@@ -133,7 +144,7 @@ const generateBlogPostFlow = ai.defineFlow(
           
           if (imagePromptText) {
             const imageResponse = await ai.generate({
-              model: 'googleai/gemini-2.0-flash-exp', // Ensure this model supports image generation
+              model: 'googleai/gemini-2.0-flash-exp', 
               prompt: imagePromptText,
               config: {
                 responseModalities: ['TEXT', 'IMAGE'], 
@@ -155,11 +166,16 @@ const generateBlogPostFlow = ai.defineFlow(
         }
       }
     }
+    
+    let finalThumbnailUrl: string | undefined = undefined;
+    if (imageUrls.length > 0) {
+      finalThumbnailUrl = imageUrls[0];
+    }
 
     return {
       ...blogContentOutput,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      thumbnailUrl: finalThumbnailUrl,
     };
   }
 );
-
