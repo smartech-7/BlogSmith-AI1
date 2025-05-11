@@ -25,11 +25,11 @@
     --primary: 210 90% 50%; /* Vibrant Blue */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 140 30% 90%; /* Light Muted Green */
-    --secondary-foreground: 140 25% 30%; /* Dark Green text */
+    --secondary: 140 60% 65%; /* Softer Green - Adjusted for better harmony */
+    --secondary-foreground: 140 35% 25%; /* Darker Green text for contrast */
 
     --accent: 25 90% 55%; /* Vibrant Orange */
-    --accent-foreground: 25 70% 10%; /* Very Dark Brown for text on orange */
+    --accent-foreground: 0 0% 100%; /* White text on orange for better readability */
     
     --destructive: 0 80% 60%; /* Destructive red */
     --destructive-foreground: 0 0% 100%; /* White */
@@ -59,13 +59,12 @@
   }
 
   .dark {
-    /* Example dark theme - can be expanded if dark mode is explicitly requested later */
-    /* For now, this app primarily uses the light theme defined above */
+    /* Dark Theme - Using the same base colors but inverted for dark mode consistency */
     --background: 210 15% 15%; 
-    --foreground: 210 15% 85%;
+    --foreground: 210 30% 90%; /* Lighter foreground for dark mode */
     
     --muted: 210 15% 25%;
-    --muted-foreground: 210 15% 65%;
+    --muted-foreground: 210 20% 70%; /* Lighter muted foreground */
 
     --popover: 210 15% 10%; 
     --popover-foreground: hsl(var(--foreground));
@@ -76,21 +75,30 @@
     --border: 210 15% 30%;
     --input: 210 15% 20%;
 
-    --primary: 210 90% 55%; 
+    --primary: 210 80% 60%; /* Slightly brighter blue for dark mode */
     --primary-foreground: 0 0% 100%; 
 
-    --secondary: 140 40% 30%; 
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 140 50% 40%; /* Adjusted green for dark mode */
+    --secondary-foreground: 140 30% 85%; /* Lighter green text */
 
-    --accent: 25 90% 60%; 
-    --accent-foreground: 25 70% 10%; 
+    --accent: 25 80% 60%; /* Slightly brighter orange for dark mode */
+    --accent-foreground: 0 0% 100%; 
     
-    --destructive: 0 70% 50%;
+    --destructive: 0 70% 55%; /* Adjusted red for dark mode */
     --destructive-foreground: 0 0% 100%;
 
-    --ring: 210 90% 65%;
+    --ring: 210 80% 65%; /* Lighter primary blue for focus rings */
     
     --shadow-color-rgb: 0, 0, 0; /* Darker shadows for dark mode */
+    
+    --shadow-sm: 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.1);
+    --shadow-md: 0 5px 8px -1px rgb(var(--shadow-color-rgb) / 0.12), 0 3px 5px -2px rgb(var(--shadow-color-rgb) / 0.12);
+    --shadow-lg: 0 12px 18px -3px rgb(var(--shadow-color-rgb) / 0.15), 0 5px 8px -4px rgb(var(--shadow-color-rgb) / 0.15);
+    --shadow-xl: 0 22px 28px -5px rgb(var(--shadow-color-rgb) / 0.18), 0 10px 12px -6px rgb(var(--shadow-color-rgb) / 0.18);
+    --shadow-inset: inset 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.1);
+    
+    --shadow-button: 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.15), 0 2px 3px -1px rgb(var(--shadow-color-rgb) / 0.12);
+    --shadow-button-hover: 0 7px 12px -2px rgb(var(--shadow-color-rgb) / 0.18), 0 4px 6px -3px rgb(var(--shadow-color-rgb) / 0.18);
   }
 }
 

@@ -84,7 +84,7 @@ export function ContentGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"blog" | "social" | "headings">("blog");
   const { toast } = useToast();
-  const blogContentRef = useRef<HTMLElement>(null);
+  const blogContentRef = useRef<HTMLDivElement>(null); // Changed to HTMLDivElement
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
@@ -222,36 +222,50 @@ export function ContentGenerator() {
     }
 
     setIsLoading(true);
-    // Temporarily set a white background for PDF export
+    
     const originalBg = document.body.style.backgroundColor;
     const originalColor = input.style.color;
-    document.body.style.backgroundColor = 'white'; // Ensure body background is white
-    input.style.backgroundColor = 'white'; // Ensure content area background is white
-    input.style.color = 'black'; // Ensure text is black
+    document.body.style.backgroundColor = 'white'; 
+    input.style.backgroundColor = 'white';
+    input.style.color = 'black'; 
 
 
     try {
-      // Ensure all images are loaded before capturing
       const images = Array.from(input.getElementsByTagName('img'));
       await Promise.all(images.map(img => {
-        if (img.complete) return Promise.resolve();
+        if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+        // If image is a data URL and potentially very large, it might already be "complete" but not fully processed by browser for canvas
+        if (img.src.startsWith('data:')) {
+            return new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = resolve;
+                image.onerror = () => {
+                    console.warn("Image (data URI) failed to load for PDF export:", img.alt);
+                    resolve(null); // Resolve anyway to not block PDF generation
+                };
+                image.src = img.src;
+            });
+        }
         return new Promise(resolve => {
-          img.onload = img.onerror = resolve;
+          img.onload = img.onerror = () => {
+            if(img.naturalHeight === 0) console.warn("Image failed to load for PDF export or has zero height:", img.src, img.alt);
+            resolve(null); // Resolve to not block PDF export
+          };
         });
       }));
       
       const canvas = await html2canvas(input, {
         scale: 2,
-        useCORS: true, // Important for external images
+        useCORS: true, 
         logging: false,
-        backgroundColor: 'white', 
-        onclone: (document) => { // Apply styles to the cloned document for rendering
+        backgroundColor: '#ffffff', // Ensure canvas background is white explicitly
+        onclone: (document) => { 
           const clonedContent = document.getElementById(input.id);
           if(clonedContent) {
             clonedContent.style.backgroundColor = 'white';
             clonedContent.style.color = 'black';
             Array.from(clonedContent.getElementsByTagName('*')).forEach((el: any) => {
-                el.style.color = 'black'; // Force all text elements to be black
+                el.style.color = 'black'; 
             });
           }
         }
@@ -261,17 +275,15 @@ export function ContentGenerator() {
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth(); 
-      const pdfHeight = pdf.internal.pageSize.getHeight(); 
+      const pdfWidth = pdf.internal.pageSize.getWidth() - 20; // With margin
+      const pdfHeight = pdf.internal.pageSize.getHeight() - 20; // With margin
 
       const canvasWidth = imgProps.width;
       const canvasHeight = imgProps.height;
       
-      // Calculate the height of the image in the PDF, maintaining aspect ratio
       const ratio = canvasWidth / pdfWidth;
-      // let scaledImgHeight = canvasHeight / ratio; // Not used directly in loop
-
-      let positionOnCanvas = 0; // Current y position on the source canvas
+      
+      let positionOnCanvas = 0; 
       let pageCount = 0;
       
       while (positionOnCanvas < canvasHeight) {
@@ -279,28 +291,23 @@ export function ContentGenerator() {
         if (pageCount > 1) { 
           pdf.addPage();
         }
-        // Calculate how much of the canvas height can fit onto one PDF page
         const sourceChunkHeightPx = Math.min(
-          canvasHeight - positionOnCanvas, // Remaining height on canvas
-          pdfHeight * ratio // Max height that fits on one PDF page, scaled to canvas pixels
+          canvasHeight - positionOnCanvas, 
+          pdfHeight * ratio 
         );
         
-        // Create a temporary canvas for the current page's chunk
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = canvasWidth;
         tempCanvas.height = sourceChunkHeightPx;
         const tempCtx = tempCanvas.getContext('2d');
         
         if (tempCtx) {
-          tempCtx.fillStyle = 'white'; // Ensure background of chunk is white
+          tempCtx.fillStyle = 'white'; 
           tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-          // Draw the chunk from the main canvas to the temporary canvas
           tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeightPx, 0, 0, canvasWidth, sourceChunkHeightPx);
           const pageImgData = tempCanvas.toDataURL('image/png');
 
-          // Add the image chunk to the PDF page
-          // The height of the image on the PDF page is `sourceChunkHeightPx / ratio`
-          pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, sourceChunkHeightPx / ratio );
+          pdf.addImage(pageImgData, 'PNG', 10, 10, pdfWidth, sourceChunkHeightPx / ratio ); // Add 10mm margin
           positionOnCanvas += sourceChunkHeightPx;
         } else {
           throw new Error("Could not create temporary canvas context for PDF generation.");
@@ -314,10 +321,11 @@ export function ContentGenerator() {
       console.error("Error exporting PDF:", error);
       toast({ title: "Error Exporting PDF", description: `Failed to export blog post as PDF. ${error.message}`, variant: "destructive" });
     } finally {
-      // Restore original styles
       document.body.style.backgroundColor = originalBg;
-      input.style.backgroundColor = ''; // Revert to CSS-defined or inherited
-      input.style.color = originalColor;
+      if(input) {
+        input.style.backgroundColor = ''; 
+        input.style.color = originalColor;
+      }
       setIsLoading(false);
     }
   };
@@ -332,21 +340,18 @@ export function ContentGenerator() {
         if (imageIndex >= 0 && imageIndex < blogPost.imageUrls!.length) {
           const imageUrl = blogPost.imageUrls![imageIndex];
           const altText = blogPost.title || blogForm.getValues('mainKeyword') || `Generated blog image ${imageIndex + 1}`;
-          // Ensure data URLs are used directly
           const finalImageUrl = imageUrl.startsWith('data:image') ? imageUrl : (imageUrl.startsWith('https://picsum.photos') ? imageUrl : imageUrl); 
           return `<figure class="my-6 flex justify-center"><img src="${finalImageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
         return ''; 
       });
     } else {
-      // Remove any placeholders if no images were generated/requested
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "");
     }
     return { __html: processedContent };
   };
 
 
-  // Assign a unique ID to the blog content container for PDF export styling
   const blogContentContainerId = 'blogContentToPrint';
   useEffect(() => {
     if (blogContentRef.current) {
@@ -366,12 +371,12 @@ export function ContentGenerator() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {featureCards.map((feature, index) => (
-          <Card key={index} className="hover:shadow-xl transition-shadow duration-300 flex flex-col">
-            <CardHeader className="items-center">
+          <Card key={index} className="hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card border border-border/50">
+            <CardHeader className="items-center pt-6 pb-3">
               {feature.icon}
-              <CardTitle className="text-xl text-center">{feature.title}</CardTitle>
+              <CardTitle className="text-xl text-center font-semibold">{feature.title}</CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow">
+            <CardContent className="flex-grow pt-2 pb-6">
               <p className="text-sm text-muted-foreground text-center">{feature.description}</p>
             </CardContent>
           </Card>
@@ -381,74 +386,74 @@ export function ContentGenerator() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
           <Tabs defaultValue="blog" onValueChange={(value) => setActiveTab(value as "blog" | "social" | "headings")} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="blog"><Sparkles className="mr-2 h-5 w-5" />Blog Post</TabsTrigger>
-              <TabsTrigger value="social"><MessageSquare className="mr-2 h-5 w-5" />Social Media</TabsTrigger>
-              <TabsTrigger value="headings"><ListChecks className="mr-2 h-5 w-5" />Suggest Headings</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted shadow-inner">
+              <TabsTrigger value="blog" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Sparkles className="mr-2 h-5 w-5" />Blog Post</TabsTrigger>
+              <TabsTrigger value="social" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><MessageSquare className="mr-2 h-5 w-5" />Social Media</TabsTrigger>
+              <TabsTrigger value="headings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-5 w-5" />Suggest Headings</TabsTrigger>
             </TabsList>
             <TabsContent value="blog">
-              <Card className="hover:shadow-xl transition-shadow duration-300 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
-                  <CardDescription>Craft compelling, SEO-optimized blog articles. Input your keywords, tone, and length.</CardDescription>
+              <Card className="shadow-xl transition-shadow duration-300 border border-primary/30 bg-card">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl flex items-center font-semibold"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
+                  <CardDescription className="text-muted-foreground">Craft compelling, SEO-optimized blog articles. Input your keywords, tone, and length.</CardDescription>
                 </CardHeader>
                 <Form {...blogForm}>
                   <form onSubmit={blogForm.handleSubmit(onBlogSubmit)}>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-5 pt-2">
                       <FormField control={blogForm.control} name="mainKeyword" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Main Keyword</FormLabel>
-                          <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} /></FormControl>
-                          <FormDescription>The primary keyword for your article.</FormDescription>
+                          <FormLabel className="font-medium text-foreground">Main Keyword</FormLabel>
+                          <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormDescription className="text-xs text-muted-foreground">The primary keyword for your article.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                        <FormField control={blogForm.control} name="relatedKeywords" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Related Keywords (comma-separated)</FormLabel>
-                          <FormControl><Input aria-label="Blog post related keywords" placeholder="e.g., organic soil, companion planting, water conservation" {...field} /></FormControl>
-                          <FormDescription>2-3 keywords related to your main topic.</FormDescription>
+                          <FormLabel className="font-medium text-foreground">Related Keywords (comma-separated)</FormLabel>
+                          <FormControl><Input aria-label="Blog post related keywords" placeholder="e.g., organic soil, companion planting" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormDescription className="text-xs text-muted-foreground">2-3 keywords related to your main topic.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={blogForm.control} name="tone" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>How should it sound? (Tone)</FormLabel>
+                          <FormLabel className="font-medium text-foreground">How should it sound? (Tone)</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger aria-label="Select blog post tone"><SelectValue placeholder="Select a tone" /></SelectTrigger></FormControl>
-                            <SelectContent>{toneOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                            <FormControl><SelectTrigger aria-label="Select blog post tone" className="bg-input shadow-inset focus:ring-primary"><SelectValue placeholder="Select a tone" /></SelectTrigger></FormControl>
+                            <SelectContent className="bg-popover border-border shadow-lg">{toneOptions.map(o => <SelectItem key={o.value} value={o.value} className="focus:bg-accent focus:text-accent-foreground">{o.label}</SelectItem>)}</SelectContent>
                           </Select>
-                           <FormDescription>The AI aims for "friendly and helpful" by default.</FormDescription>
+                           <FormDescription className="text-xs text-muted-foreground">The AI aims for "friendly and helpful" by default.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={blogForm.control} name="wordCount" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>How long should it be? (Words 700-3000)</FormLabel>
-                          <FormControl><Input aria-label="Blog post word count" type="number" min="700" max="3000" placeholder="e.g., 700" {...field} /></FormControl>
-                          <FormDescription>Minimum 700 words for better SEO.</FormDescription>
+                          <FormLabel className="font-medium text-foreground">How long should it be? (Words 700-3000)</FormLabel>
+                          <FormControl><Input aria-label="Blog post word count" type="number" min="700" max="3000" placeholder="e.g., 700" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormDescription className="text-xs text-muted-foreground">Minimum 700 words for better SEO.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={blogForm.control} name="numPictures" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>How many pictures? (0-5)</FormLabel>
-                          <FormControl><Input aria-label="Number of pictures for blog post" type="number" min="0" max="5" placeholder="e.g., 2" {...field} /></FormControl>
-                          <FormDescription>AI will place images where appropriate. The first is the thumbnail.</FormDescription>
+                          <FormLabel className="font-medium text-foreground">How many pictures? (0-5)</FormLabel>
+                          <FormControl><Input aria-label="Number of pictures for blog post" type="number" min="0" max="5" placeholder="e.g., 2" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormDescription className="text-xs text-muted-foreground">AI will place images where appropriate. The first is the thumbnail.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                        <FormField control={blogForm.control} name="seoKeywords" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>SEO Keywords (Optional)</FormLabel>
-                          <FormControl><Input aria-label="SEO keywords for optimization" placeholder="e.g., home gardening tips, best soil for vegetables" {...field} /></FormControl>
-                          <FormDescription>Comma-separated keywords to further optimize the content.</FormDescription>
+                          <FormLabel className="font-medium text-foreground">SEO Keywords (Optional)</FormLabel>
+                          <FormControl><Input aria-label="SEO keywords for optimization" placeholder="e.g., home gardening tips" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormDescription className="text-xs text-muted-foreground">Comma-separated keywords to further optimize the content.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                     </CardContent>
-                    <CardFooter>
-                      <Button type="submit" disabled={isLoading && activeTab === 'blog'} className="w-full text-lg py-6">
+                    <CardFooter className="pt-6">
+                      <Button type="submit" disabled={isLoading && activeTab === 'blog'} className="w-full text-lg py-6 shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                         {isLoading && activeTab === 'blog' ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Generating Blog...</> : <><Sparkles className="mr-2 h-5 w-5" />Generate Blog Post</>}
                       </Button>
                     </CardFooter>
@@ -457,29 +462,29 @@ export function ContentGenerator() {
               </Card>
             </TabsContent>
             <TabsContent value="social">
-               <Card className="hover:shadow-xl transition-shadow duration-300 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center"><MessageSquare className="mr-2 h-6 w-6 text-primary" />Create Social Media Post</CardTitle>
-                  <CardDescription>Generate engaging posts for your social media platforms.</CardDescription>
+               <Card className="shadow-xl transition-shadow duration-300 border border-primary/30 bg-card">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl flex items-center font-semibold"><MessageSquare className="mr-2 h-6 w-6 text-primary" />Create Social Media Post</CardTitle>
+                  <CardDescription className="text-muted-foreground">Generate engaging posts for your social media platforms.</CardDescription>
                 </CardHeader>
                 <Form {...socialMediaForm}>
                   <form onSubmit={socialMediaForm.handleSubmit(onSocialMediaSubmit)}>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-5 pt-2">
                       <FormField control={socialMediaForm.control} name="topic" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Topic/Content Idea</FormLabel>
-                          <FormControl><Textarea aria-label="Social media post topic" placeholder="e.g., Announcing our new product feature that solves..." {...field} /></FormControl>
+                          <FormLabel className="font-medium text-foreground">Topic/Content Idea</FormLabel>
+                          <FormControl><Textarea aria-label="Social media post topic" placeholder="e.g., Announcing our new product feature..." {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={socialMediaForm.control} name="platform" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Platform</FormLabel>
+                          <FormLabel className="font-medium text-foreground">Platform</FormLabel>
                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger aria-label="Select social media platform"><SelectValue placeholder="Select a platform" /></SelectTrigger></FormControl>
-                            <SelectContent>
+                            <FormControl><SelectTrigger aria-label="Select social media platform" className="bg-input shadow-inset focus:ring-primary"><SelectValue placeholder="Select a platform" /></SelectTrigger></FormControl>
+                            <SelectContent className="bg-popover border-border shadow-lg">
                               {socialMediaPlatforms.map(platform => (
-                                <SelectItem key={platform} value={platform}>{platform}</SelectItem>
+                                <SelectItem key={platform} value={platform} className="focus:bg-accent focus:text-accent-foreground">{platform}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -488,23 +493,23 @@ export function ContentGenerator() {
                       )} />
                       <FormField control={socialMediaForm.control} name="instructions" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Optional Instructions</FormLabel>
-                          <FormControl><Textarea aria-label="Optional instructions for social media post" placeholder="e.g., Include a question, use 2 relevant hashtags, make it exciting." {...field} /></FormControl>
-                           <FormDescription>Any specific guidelines for the post tone, length, or style.</FormDescription>
+                          <FormLabel className="font-medium text-foreground">Optional Instructions</FormLabel>
+                          <FormControl><Textarea aria-label="Optional instructions for social media post" placeholder="e.g., Include a question, use 2 hashtags..." {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                           <FormDescription className="text-xs text-muted-foreground">Specific guidelines for tone, length, or style.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                        <FormField control={socialMediaForm.control} name="seoKeywords" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>SEO Keywords (Optional)</FormLabel>
-                          <FormControl><Input aria-label="SEO keywords for social media post optimization" placeholder="e.g., tech innovation, social media trends" {...field} /></FormControl>
-                          <FormDescription>Comma-separated keywords to optimize the post.</FormDescription>
+                          <FormLabel className="font-medium text-foreground">SEO Keywords (Optional)</FormLabel>
+                          <FormControl><Input aria-label="SEO keywords for social media post optimization" placeholder="e.g., tech innovation, social media trends" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormDescription className="text-xs text-muted-foreground">Comma-separated keywords to optimize the post.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                     </CardContent>
-                    <CardFooter>
-                      <Button type="submit" disabled={isLoading && activeTab === 'social'} className="w-full text-lg py-6">
+                    <CardFooter className="pt-6">
+                      <Button type="submit" disabled={isLoading && activeTab === 'social'} className="w-full text-lg py-6 shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                         {isLoading && activeTab === 'social' ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Generating Post...</> : <><MessageSquare className="mr-2 h-5 w-5" />Generate Social Post</>}
                       </Button>
                     </CardFooter>
@@ -519,14 +524,14 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-primary/10 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
-              <CardDescription>
+          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-primary/20 shadow-xl bg-card">
+            <CardHeader className="pb-3 border-b border-border/50">
+              <CardTitle className="text-2xl flex items-center font-semibold"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
+              <CardDescription className="text-muted-foreground text-sm">
                 {activeTab === 'headings' ? 'Switch to Blog Post or Social Media tab to see generated content.' : 'Your AI-generated content will appear below. Review, copy, or export it.'}
               </CardDescription>
             </CardHeader>
-            <CardContent id={blogContentContainerId} ref={blogContentRef} className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
+            <CardContent id={blogContentContainerId} ref={blogContentRef} className="flex-grow overflow-y-auto p-6 bg-muted/20 rounded-b-md space-y-4">
               {isLoading && (activeTab === 'blog' || activeTab === 'social') && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -536,16 +541,16 @@ export function ContentGenerator() {
               )}
               {!isLoading && !generatedBlogPost && !generatedSocialMediaPost && activeTab !== 'headings' && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
-                    <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                    <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
                   <p className="text-lg text-muted-foreground">Your generated content will appear here.</p>
-                  <p className="text-sm text-muted-foreground/80">Fill the form on the left and let the magic happen!</p>
+                  <p className="text-sm text-muted-foreground/70">Fill the form on the left and let the magic happen!</p>
                   </div>
               )}
               {activeTab === 'headings' && !isLoading && (
                  <div className="flex flex-col items-center justify-center h-full text-center py-10">
-                    <ListChecks className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                    <ListChecks className="h-16 w-16 text-muted-foreground/30 mb-4" />
                   <p className="text-lg text-muted-foreground">Heading suggestions appear in the left panel.</p>
-                  <p className="text-sm text-muted-foreground/80">This area is for final blog or social media content.</p>
+                  <p className="text-sm text-muted-foreground/70">This area is for final blog or social media content.</p>
                   </div>
               )}
 
@@ -561,15 +566,15 @@ export function ContentGenerator() {
                       />
                     </figure>
                   )}
-                  <h3 className="text-xl font-semibold mb-4 border-b pb-2">{generatedBlogPost.title}</h3>
-                  <div dangerouslySetInnerHTML={renderBlogContent(generatedBlogPost)} />
+                  <h3 className="text-2xl font-semibold mb-4 border-b border-border/50 pb-2 text-foreground">{generatedBlogPost.title}</h3>
+                  <div dangerouslySetInnerHTML={renderBlogContent(generatedBlogPost)} className="text-foreground" />
                 </article>
               )}
 
               {generatedSocialMediaPost && activeTab === "social" && (
                  <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
-                  <h3 className="text-xl font-semibold mb-2 border-b pb-2">{socialMediaForm.getValues('platform')} Post</h3>
-                   <div dangerouslySetInnerHTML={{ __html: generatedSocialMediaPost.postContent.replace(/\n/g, '<br />') }} />
+                  <h3 className="text-xl font-semibold mb-2 border-b border-border/50 pb-2 text-foreground">{socialMediaForm.getValues('platform')} Post</h3>
+                   <div dangerouslySetInnerHTML={{ __html: generatedSocialMediaPost.postContent.replace(/\n/g, '<br />') }} className="text-foreground"/>
                    {generatedSocialMediaPost.hashtags && generatedSocialMediaPost.hashtags.length > 0 && (
                      <p className="mt-4 text-sm text-primary">
                        <strong>Hashtags:</strong> {generatedSocialMediaPost.hashtags.join(' ')}
@@ -579,12 +584,12 @@ export function ContentGenerator() {
               )}
             </CardContent>
             {((generatedBlogPost && activeTab === "blog") || (generatedSocialMediaPost && activeTab === "social")) && !isLoading ? (
-              <CardFooter className="flex justify-end space-x-2 pt-4 border-t bg-card rounded-b-lg">
-                <Button variant="outline" onClick={() => handleCopy(activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent)}>
+              <CardFooter className="flex justify-end space-x-2 pt-4 border-t border-border/50 bg-card rounded-b-lg shadow-inner">
+                <Button variant="outline" onClick={() => handleCopy(activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent)} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                   <Copy className="mr-2 h-4 w-4" />Copy Text
                 </Button>
                 {generatedBlogPost && activeTab === "blog" && (
-                  <Button variant="outline" onClick={handleExportPdf} disabled={isLoading}>
+                  <Button variant="outline" onClick={handleExportPdf} disabled={isLoading} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                     <Printer className="mr-2 h-4 w-4" />Export PDF
                   </Button>
                 )}
@@ -592,7 +597,7 @@ export function ContentGenerator() {
                   activeTab === "blog" ? generatedBlogPost?.title : socialMediaForm.getValues('platform'),
                   activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent,
                   activeTab === "blog" ? "Blog Post" : "Social Media Post"
-                )}>
+                )} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                   <Download className="mr-2 h-4 w-4" />Export Text
                 </Button>
               </CardFooter>
