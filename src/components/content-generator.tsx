@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,13 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
-import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post-flow';
+import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
 import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
 import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform-schema';
+import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -106,7 +106,12 @@ export function ContentGenerator() {
       console.error("Error generating blog post:", error);
       let errorMessage = "Failed to generate blog post. Please try again.";
       if (error instanceof Error && error.message) {
-        errorMessage = `Failed to generate blog post: ${error.message}. Please try again.`;
+        // Check if the error message indicates a specific Genkit/Gemini issue like blocked content
+        if (error.message.includes('blocked') || error.message.includes('safety settings')) {
+             errorMessage = "Content generation was blocked due to safety settings. Please revise your input or try a different topic.";
+        } else {
+             errorMessage = `Failed to generate blog post: ${error.message}. Please try again.`;
+        }
       }
       toast({ title: "Error Generating Blog Post", description: errorMessage, variant: "destructive" });
     } finally {
@@ -125,8 +130,12 @@ export function ContentGenerator() {
     } catch (error) {
       console.error("Error generating social media post:", error);
       let errorMessage = "Failed to generate social media post. Please try again.";
-      if (error instanceof Error && error.message) {
-        errorMessage = `Failed to generate social media post: ${error.message}. Please try again.`;
+       if (error instanceof Error && error.message) {
+        if (error.message.includes('blocked') || error.message.includes('safety settings')) {
+             errorMessage = "Content generation was blocked due to safety settings. Please revise your input or try a different topic.";
+        } else {
+             errorMessage = `Failed to generate social media post: ${error.message}. Please try again.`;
+        }
       }
       toast({ title: "Error Generating Social Media Post", description: errorMessage, variant: "destructive" });
     } finally {
@@ -172,7 +181,6 @@ export function ContentGenerator() {
         const imageIndex = parseInt(p1, 10) - 1;
         if (blogPost.imageUrls && imageIndex >= 0 && imageIndex < blogPost.imageUrls.length) {
           const imageUrl = blogPost.imageUrls[imageIndex];
-          // Using a data-ai-hint with relevant keywords for potential image search/curation
           return `<figure class="my-6 flex justify-center"><img src="${imageUrl}" alt="${blogPost.title || "Generated blog image"} ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
         return ''; 
@@ -215,7 +223,7 @@ export function ContentGenerator() {
               <TabsTrigger value="social"><MessageSquare className="mr-2 h-5 w-5" />Social Media</TabsTrigger>
             </TabsList>
             <TabsContent value="blog">
-              <Card className="shadow-xl rounded-lg border-primary/20 border">
+              <Card className="shadow-xl rounded-lg border-primary/20 border bg-card">
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
                   <CardDescription>Craft compelling blog articles. Input your topic, tone, and length. Optionally add SEO keywords.</CardDescription>
@@ -271,7 +279,7 @@ export function ContentGenerator() {
               </Card>
             </TabsContent>
             <TabsContent value="social">
-               <Card className="shadow-xl rounded-lg border-primary/20 border">
+               <Card className="shadow-xl rounded-lg border-primary/20 border bg-card">
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center"><MessageSquare className="mr-2 h-6 w-6 text-primary" />Create Social Media Post</CardTitle>
                   <CardDescription>Generate engaging posts for your social media platforms. Provide a topic and choose your platform.</CardDescription>
@@ -322,14 +330,14 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="shadow-xl rounded-lg border-primary/10 border sticky top-6 h-[calc(100vh-3rem)] flex flex-col">
+          <Card className="shadow-xl rounded-lg border-primary/10 border bg-card sticky top-6 h-[calc(100vh-8rem)] md:h-auto flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
                 Your AI-generated content will appear below. Review, copy, or export it.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
+            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4 min-h-[400px] md:min-h-[calc(100vh-15rem)]">
               {isLoading && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -365,7 +373,7 @@ export function ContentGenerator() {
               )}
             </CardContent>
             {((generatedBlogPost && activeTab === "blog") || (generatedSocialMediaPost && activeTab === "social")) && !isLoading ? (
-              <CardFooter className="flex justify-end space-x-2 pt-4 border-t bg-background rounded-b-lg">
+              <CardFooter className="flex justify-end space-x-2 pt-4 border-t bg-card rounded-b-lg">
                 <Button variant="outline" onClick={() => handleCopy(activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent)}>
                   <Copy className="mr-2 h-4 w-4" />Copy Text
                 </Button>
