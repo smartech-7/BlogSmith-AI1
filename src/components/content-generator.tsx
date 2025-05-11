@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -9,14 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
-import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
+import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post-flow';
 import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
 import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-// Image component from next/image is no longer used for blog post images directly in dangerouslySetInnerHTML
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform';
+import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform-schema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -56,7 +56,7 @@ const featureCards = [
   {
     icon: <Search className="h-8 w-8 text-primary mb-3" />,
     title: "Help People Discover It",
-    description: "Optimize your content for search engines and social media. Improve visibility and attract more organic traffic.",
+    description: "Optimize your content for search engines. Improve visibility and attract more organic traffic.",
   },
   {
     icon: <ImageIcon className="h-8 w-8 text-primary mb-3" />,
@@ -104,7 +104,11 @@ export function ContentGenerator() {
       toast({ title: "Blog Post Generated!", description: "Your blog post has been successfully generated." });
     } catch (error) {
       console.error("Error generating blog post:", error);
-      toast({ title: "Error", description: "Failed to generate blog post. Please try again.", variant: "destructive" });
+      let errorMessage = "Failed to generate blog post. Please try again.";
+      if (error instanceof Error && error.message) {
+        errorMessage = `Failed to generate blog post: ${error.message}. Please try again.`;
+      }
+      toast({ title: "Error Generating Blog Post", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +124,11 @@ export function ContentGenerator() {
       toast({ title: "Social Media Post Generated!", description: `Your ${data.platform} post is ready.` });
     } catch (error) {
       console.error("Error generating social media post:", error);
-      toast({ title: "Error", description: "Failed to generate social media post. Please try again.", variant: "destructive" });
+      let errorMessage = "Failed to generate social media post. Please try again.";
+      if (error instanceof Error && error.message) {
+        errorMessage = `Failed to generate social media post: ${error.message}. Please try again.`;
+      }
+      toast({ title: "Error Generating Social Media Post", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -129,9 +137,7 @@ export function ContentGenerator() {
 
   const handleCopy = (text: string | undefined) => {
     if (text) {
-      // Create a temporary element to parse HTML and get text content
       const tempEl = document.createElement('div');
-      // Replace <br /> with newlines for clipboard, and remove image tags for text-only copy
       tempEl.innerHTML = text.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
       const textToCopy = tempEl.textContent || tempEl.innerText || "";
       navigator.clipboard.writeText(textToCopy);
@@ -141,9 +147,7 @@ export function ContentGenerator() {
   
   const handleExport = (title: string | undefined, content: string | undefined, type: "Blog Post" | "Social Media Post") => {
      if (content) {
-      // Create a temporary element to parse HTML and get text content
       const tempEl = document.createElement('div');
-       // Replace <br /> with newlines for export, and remove image tags for text-only export
       tempEl.innerHTML = content.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
       const textContentToExport = tempEl.textContent || tempEl.innerText || "";
       
@@ -168,12 +172,12 @@ export function ContentGenerator() {
         const imageIndex = parseInt(p1, 10) - 1;
         if (blogPost.imageUrls && imageIndex >= 0 && imageIndex < blogPost.imageUrls.length) {
           const imageUrl = blogPost.imageUrls[imageIndex];
+          // Using a data-ai-hint with relevant keywords for potential image search/curation
           return `<figure class="my-6 flex justify-center"><img src="${imageUrl}" alt="${blogPost.title || "Generated blog image"} ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
-        return ''; // Remove placeholder if no corresponding image
+        return ''; 
       });
     } else {
-      // If no imageUrls array, or it's empty, still remove any placeholders
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "");
     }
     return { __html: processedContent };
@@ -322,7 +326,7 @@ export function ContentGenerator() {
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
-                Your AI-generated content will appear below.
+                Your AI-generated content will appear below. Review, copy, or export it.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
@@ -336,8 +340,8 @@ export function ContentGenerator() {
               {!isLoading && !generatedBlogPost && !generatedSocialMediaPost && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                     <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">Your generated content will appear here.</p>
-                  <p className="text-sm text-muted-foreground/80">Fill the form and let the magic happen!</p>
+                  <p className="text-lg text-muted-foreground">Your generated content will appear here.</p>
+                  <p className="text-sm text-muted-foreground/80">Fill the form on the left and let the magic happen!</p>
                   </div>
               )}
 
@@ -380,3 +384,6 @@ export function ContentGenerator() {
     </>
   );
 }
+
+
+    
