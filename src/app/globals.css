@@ -5,39 +5,39 @@
 
 @layer base {
   :root {
-    /* Light Theme - Modern & Clean with Depth - Refined */
-    --background: 220 25% 98%; /* Very light cool gray - Kept */
-    --foreground: 220 25% 15%; /* Dark desaturated blue - Kept */
+    /* Light Theme - Serene Grove */
+    --background: 120 20% 97%; /* Very light, soft minty green */
+    --foreground: 120 25% 18%; /* Dark, desaturated forest green */
     
-    --muted: 220 20% 92%; /* Light muted cool gray - Adjusted */
-    --muted-foreground: 220 15% 45%; /* Medium muted cool gray - Adjusted */
+    --muted: 120 15% 90%; /* Lighter minty gray */
+    --muted-foreground: 120 10% 40%; /* Medium muted forest green */
 
-    --popover: 0 0% 100%; /* Pure white for popovers - Kept */
+    --popover: 0 0% 100%; /* White */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 0 0% 100%; /* Pure white for cards - Kept */
+    --card: 0 0% 100%; /* White, slightly offset from bg */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 220 15% 90%; /* Soft cool gray border - Adjusted */
-    --input: 220 20% 97%; /* Very light gray for input, slightly off-white - Adjusted */
+    --border: 120 10% 85%; /* Soft minty gray border */
+    --input: 120 15% 95%; /* Very light minty input background */
 
     /* Primary, Accent & Secondary Colors */
-    --primary: 215 80% 55%; /* Vibrant Blue - Kept */
-    --primary-foreground: 0 0% 100%; /* White - Kept */
+    --primary: 140 55% 48%; /* Rich, vibrant green */
+    --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 190 50% 50%; /* Desaturated and lighter teal - Adjusted */
-    --secondary-foreground: 190 25% 96%; /* Light text on teal - Adjusted */
+    --secondary: 200 60% 55%; /* Calm, sky blue */
+    --secondary-foreground: 200 20% 98%; /* Very light blue/white */
 
-    --accent: 30 90% 58%; /* Bright Orange - for highlights - Kept */
-    --accent-foreground: 0 0% 100%; /* White - Kept */
+    --accent: 45 80% 60%; /* Warm, earthy yellow/gold */
+    --accent-foreground: 45 30% 15%; /* Dark brown/black for contrast on accent */
     
-    --destructive: 0 80% 60%; /* Clear Red - Adjusted */
-    --destructive-foreground: 0 0% 100%; /* White - Kept */
+    --destructive: 0 75% 55%; /* Clear Red */
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --ring: 215 75% 60%; /* Adjusted primary blue for focus rings - Adjusted */
-    --radius: 0.5rem; /* Standardized rounded corners - Kept */
+    --ring: 140 50% 55%; /* Slightly lighter primary green for focus */
+    --radius: 0.75rem; /* Increased rounded corners */
 
-    /* Shadow Definitions for Subtle 3D Look - Refined Alphas */
+    /* Shadow Definitions - Kept existing, they are quite neutral */
     --shadow-color-rgb: 34, 41, 47; 
     
     --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.03), 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.02);
@@ -46,50 +46,50 @@
     --shadow-xl: 0 15px 20px -5px rgb(var(--shadow-color-rgb) / 0.06), 0 6px 8px -6px rgb(var(--shadow-color-rgb) / 0.05);
     --shadow-inset: inset 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.03);
 
-    /* Button specific shadows for a "raised" effect - Kept */
+    /* Button specific shadows for a "raised" effect */
     --shadow-button: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.07), 0 1px 1px 0 rgb(var(--shadow-color-rgb) / 0.05);
     --shadow-button-hover: 0 2px 4px -1px rgb(var(--shadow-color-rgb) / 0.09), 0 1px 2px -2px rgb(var(--shadow-color-rgb) / 0.07);
 
-    /* Chart colors - Kept */
+    /* Chart colors */
     --chart-1: hsl(var(--primary)); 
     --chart-2: hsl(var(--secondary)); 
     --chart-3: hsl(var(--accent)); 
-    --chart-4: 100 70% 50%;  
-    --chart-5: 280 70% 60%; 
+    --chart-4: 30 70% 55%;  /* Soft orange/peach */
+    --chart-5: 270 60% 65%; /* Lavender */
   }
 
   .dark {
-    /* Dark Theme - Consistent with the light theme's palette but inverted - Refined */
-    --background: 220 20% 10%; /* Dark desaturated blue - Adjusted */
-    --foreground: 220 25% 94%; /* Very light cool gray - Adjusted */
+    /* Dark Theme - Midnight Grove */
+    --background: 120 15% 10%; /* Very dark forest green */
+    --foreground: 120 20% 92%; /* Light, soft minty green */
     
-    --muted: 220 15% 18%; /* Darker muted cool gray - Adjusted */
-    --muted-foreground: 220 20% 70%; /* Lighter muted foreground - Adjusted */
+    --muted: 120 10% 18%; /* Darker muted forest green */
+    --muted-foreground: 120 15% 65%; /* Lighter muted foreground */
 
-    --popover: 220 15% 7%; /* Very dark popover background - Adjusted */
+    --popover: 120 10% 7%; /* Very dark popover background */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 220 15% 9%; /* Very dark card background - Adjusted */
+    --card: 120 10% 9%; /* Very dark card background */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 220 15% 22%; /* Darker border - Adjusted */
-    --input: 220 15% 15%; /* Dark input background - Adjusted */
+    --border: 120 10% 20%; /* Darker border */
+    --input: 120 10% 14%; /* Dark input background */
 
-    --primary: 215 75% 60%; /* Brighter blue for dark mode - Kept */
+    --primary: 140 50% 60%; /* Brighter green for dark mode */
     --primary-foreground: 0 0% 100%; 
 
-    --secondary: 190 50% 55%; /* Brighter, adjusted teal for dark mode - Adjusted */
-    --secondary-foreground: 190 25% 96%; /* Adjusted */
+    --secondary: 200 55% 65%; /* Brighter sky blue for dark mode */
+    --secondary-foreground: 200 20% 98%; 
 
-    --accent: 30 85% 62%; /* Brighter orange for dark mode - Kept */
-    --accent-foreground: 0 0% 100%; 
+    --accent: 45 75% 65%; /* Brighter earthy yellow/gold for dark mode */
+    --accent-foreground: 45 30% 15%; 
     
-    --destructive: 0 75% 65%; /* Adjusted red for dark mode - Adjusted */
+    --destructive: 0 70% 60%; /* Adjusted red for dark mode */
     --destructive-foreground: 0 0% 100%;
 
-    --ring: 215 70% 70%; /* Lighter primary blue for focus rings - Kept */
+    --ring: 140 45% 70%; /* Lighter primary green for focus rings */
     
-    /* Darker, more pronounced shadows for dark mode - Refined Alphas */
+    /* Darker, more pronounced shadows for dark mode - Kept existing */
     --shadow-color-rgb: 0, 0, 0; 
     
     --shadow-sm: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.06);
@@ -98,9 +98,12 @@
     --shadow-xl: 0 22px 28px -5px rgb(var(--shadow-color-rgb) / 0.10), 0 9px 11px -6px rgb(var(--shadow-color-rgb) / 0.10);
     --shadow-inset: inset 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.07);
     
-    /* Button specific shadows for dark mode - Kept */
+    /* Button specific shadows for dark mode */
     --shadow-button: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.1), 0 1px 2px -1px rgb(var(--shadow-color-rgb) / 0.08);
     --shadow-button-hover: 0 4px 6px -1px rgb(var(--shadow-color-rgb) / 0.12), 0 2px 4px -2px rgb(var(--shadow-color-rgb) / 0.12);
+
+    /* Chart colors - ensure they are defined for dark mode if needed, or they'll inherit from light. */
+    /* Chart colors for dark could be adjusted if needed, but using the same ones is fine. */
   }
 }
 
@@ -112,3 +115,4 @@
     @apply bg-background text-foreground;
   }
 }
+
