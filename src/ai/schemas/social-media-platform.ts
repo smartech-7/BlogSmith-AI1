@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Defines the schema and types for social media platforms.
  *
