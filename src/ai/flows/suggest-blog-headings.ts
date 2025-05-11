@@ -34,6 +34,8 @@ const prompt = ai.definePrompt({
   The headings should be suitable for attracting readers and improving search engine rankings.
   Topic: {{{topic}}}
   Please provide the headings as a JSON array of strings.
+
+  Important: Each heading in the JSON array must be plain text. Do not use any special characters or symbols (except for standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses). Avoid any markdown formatting, especially triple backticks (\`\`\`). Ensure the output remains a valid JSON array of strings.
   `,
 });
 
@@ -48,3 +50,4 @@ const suggestBlogHeadingsFlow = ai.defineFlow(
     return output!;
   }
 );
+

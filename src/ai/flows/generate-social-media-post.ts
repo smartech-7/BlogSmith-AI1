@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { SocialMediaPlatformSchema, socialMediaPlatforms } from '@/ai/schemas/social-media-platform';
+import { SocialMediaPlatformSchema } from '@/ai/schemas/social-media-platform';
 
 const GenerateSocialMediaPostInputSchema = z.object({
   topic: z.string().min(5).max(200).describe('The topic or content idea for the social media post.'),
@@ -48,6 +48,11 @@ Your output should be a JSON object with 'postContent' (the text of the social m
 Do not include the platform name in the postContent unless it's natural to do so.
 Ensure the post content is well-formatted for the platform. For example, for Twitter, keep it concise. For Instagram, it can be longer and more visual.
 Suggest relevant hashtags.
+
+Important: The \`postContent\` and each hashtag in the \`hashtags\` array must be plain text.
+For \`postContent\`, do not use any special characters or symbols other than standard punctuation (periods, commas, question marks, exclamation marks, apostrophes, hyphens, parentheses) and platform-specific symbols like '@' for mentions and '#' for hashtags.
+For \`hashtags\`, ensure they only contain alphanumeric characters after the initial '#' symbol (e.g., "#example", "#myTag123").
+Avoid any markdown formatting, especially triple backticks (\`\`\`), in both \`postContent\` and \`hashtags\`.
 `,
 });
 
@@ -82,3 +87,4 @@ const generateSocialMediaPostFlow = ai.defineFlow(
     };
   }
 );
+

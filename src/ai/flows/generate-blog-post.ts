@@ -55,6 +55,8 @@ If images are requested (number of images > 0), you MUST include exactly {{{numP
 
 Ensure the content is SEO optimized and engaging.
 Output the blog post in a structured format with a title and content sections. The content should be a single string, potentially containing the image placeholders.
+
+Important: The generated title and content must be plain text. Do not use any special characters or symbols (except for standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses). Avoid any markdown formatting, especially triple backticks (\`\`\`).
 `,
 });
 
@@ -149,3 +151,4 @@ const generateBlogPostFlow = ai.defineFlow(
     };
   }
 );
+

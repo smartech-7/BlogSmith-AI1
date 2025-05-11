@@ -40,6 +40,8 @@ Content: {{{content}}}
 Keywords: {{{keywords}}}
 
 Output the optimized content. The optimized content should be highly relevant to the keywords, and should be well written and engaging.
+
+Important: The \`optimizedContent\` must be plain text. Do not use any special characters or symbols (except for standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses). Avoid any markdown formatting, especially triple backticks (\`\`\`).
 `,
 });
 
@@ -54,3 +56,4 @@ const optimizeForSeoFlow = ai.defineFlow(
     return output!;
   }
 );
+
