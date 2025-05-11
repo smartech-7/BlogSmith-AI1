@@ -56,7 +56,7 @@ If images are requested (number of images > 0), you MUST include exactly {{{numP
 Ensure the content is SEO optimized and engaging.
 Output the blog post in a structured format with a title and content sections. The content should be a single string, potentially containing the image placeholders.
 
-Important: The generated title and content must be plain text. Do not use any special characters or symbols (except for standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses). Avoid any markdown formatting, especially triple backticks (\`\`\`).
+Important: The generated title and content must be plain text suitable for direct pasting into platforms like Google Blogger. Do not use any special characters or symbols other than standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses. Avoid any markdown formatting (e.g., no '###' heading markers, no '***' horizontal rules, no triple backticks \`\`\`).
 `,
 });
 
@@ -93,6 +93,10 @@ const generateBlogPostFlow = ai.defineFlow(
       wordCount: input.wordCount,
       numPictures: input.numPictures,
     });
+
+    if (!blogContentOutput || !blogContentOutput.title || !blogContentOutput.content) {
+      throw new Error("Failed to generate blog post title or content from the AI model.");
+    }
 
     const imageUrls: string[] = [];
     if (input.numPictures > 0 && blogContentOutput?.content) {
@@ -146,7 +150,7 @@ const generateBlogPostFlow = ai.defineFlow(
     }
 
     return {
-      ...blogContentOutput!,
+      ...blogContentOutput,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
     };
   }

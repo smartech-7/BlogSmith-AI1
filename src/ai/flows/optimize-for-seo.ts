@@ -41,7 +41,7 @@ Keywords: {{{keywords}}}
 
 Output the optimized content. The optimized content should be highly relevant to the keywords, and should be well written and engaging.
 
-Important: The \`optimizedContent\` must be plain text. Do not use any special characters or symbols (except for standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses). Avoid any markdown formatting, especially triple backticks (\`\`\`).
+Important: The \`optimizedContent\` must be plain text suitable for direct pasting into platforms like Google Blogger. Do not use any special characters or symbols other than standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses. Avoid any markdown formatting (e.g., no '###' heading markers, no '***' horizontal rules, no triple backticks \`\`\`).
 `,
 });
 

@@ -50,9 +50,9 @@ Ensure the post content is well-formatted for the platform. For example, for Twi
 Suggest relevant hashtags.
 
 Important: The \`postContent\` and each hashtag in the \`hashtags\` array must be plain text.
-For \`postContent\`, do not use any special characters or symbols other than standard punctuation (periods, commas, question marks, exclamation marks, apostrophes, hyphens, parentheses) and platform-specific symbols like '@' for mentions and '#' for hashtags.
+For \`postContent\`, do not use any special characters or symbols other than standard punctuation (periods, commas, question marks, exclamation marks, apostrophes, hyphens, parentheses) and platform-specific symbols like '@' for mentions and '#' for hashtags. Avoid any markdown formatting (e.g., no '###' heading markers, no '***' horizontal rules, no triple backticks \`\`\`).
 For \`hashtags\`, ensure they only contain alphanumeric characters after the initial '#' symbol (e.g., "#example", "#myTag123").
-Avoid any markdown formatting, especially triple backticks (\`\`\`), in both \`postContent\` and \`hashtags\`.
+Avoid any markdown formatting in both \`postContent\` and \`hashtags\`.
 `,
 });
 
@@ -74,7 +74,7 @@ const generateSocialMediaPostFlow = ai.defineFlow(
       if (typeof hashtags === 'string') {
         hashtags = hashtags.split(/[,#\s]+/).filter(h => h.length > 0).map(h => `#${h.replace(/^#/, '')}`);
       } else {
-        hashtags = undefined; // Or handle as an error/warning
+        hashtags = undefined; 
       }
     } else if (Array.isArray(hashtags)) {
         hashtags = hashtags.map(h => h.startsWith('#') ? h : `#${h}`);

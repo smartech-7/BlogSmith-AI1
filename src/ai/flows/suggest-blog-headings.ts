@@ -35,7 +35,7 @@ const prompt = ai.definePrompt({
   Topic: {{{topic}}}
   Please provide the headings as a JSON array of strings.
 
-  Important: Each heading in the JSON array must be plain text. Do not use any special characters or symbols (except for standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses). Avoid any markdown formatting, especially triple backticks (\`\`\`). Ensure the output remains a valid JSON array of strings.
+  Important: Each heading in the JSON array must be plain text. Do not use any special characters or symbols (except for standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses). Avoid any markdown formatting (e.g., no '###' heading markers, no '***' horizontal rules, no triple backticks \`\`\`). Ensure the output remains a valid JSON array of strings.
   `,
 });
 
