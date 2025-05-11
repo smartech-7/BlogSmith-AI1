@@ -5,100 +5,100 @@
 
 @layer base {
   :root {
-    /* Light Theme - Modern & Clean with Depth */
-    --background: 220 25% 98%; /* Very light cool gray */
-    --foreground: 220 25% 15%; /* Dark desaturated blue */
+    /* Light Theme - Modern & Clean with Depth - Refined */
+    --background: 220 25% 98%; /* Very light cool gray - Kept */
+    --foreground: 220 25% 15%; /* Dark desaturated blue - Kept */
     
-    --muted: 220 20% 90%; /* Light muted cool gray */
-    --muted-foreground: 220 15% 40%; /* Medium muted cool gray */
+    --muted: 220 20% 92%; /* Light muted cool gray - Adjusted */
+    --muted-foreground: 220 15% 45%; /* Medium muted cool gray - Adjusted */
 
-    --popover: 0 0% 100%; /* Pure white for popovers */
+    --popover: 0 0% 100%; /* Pure white for popovers - Kept */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 0 0% 100%; /* Pure white for cards */
+    --card: 0 0% 100%; /* Pure white for cards - Kept */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 220 15% 88%; /* Soft cool gray border */
-    --input: 220 20% 96%; /* Very light gray for input, slightly off-white */
+    --border: 220 15% 90%; /* Soft cool gray border - Adjusted */
+    --input: 220 20% 97%; /* Very light gray for input, slightly off-white - Adjusted */
 
     /* Primary, Accent & Secondary Colors */
-    --primary: 215 80% 55%; /* Vibrant Blue */
-    --primary-foreground: 0 0% 100%; /* White */
+    --primary: 215 80% 55%; /* Vibrant Blue - Kept */
+    --primary-foreground: 0 0% 100%; /* White - Kept */
 
-    --secondary: 180 60% 45%; /* Teal */
-    --secondary-foreground: 180 30% 95%; /* Light text on teal */
+    --secondary: 190 50% 50%; /* Desaturated and lighter teal - Adjusted */
+    --secondary-foreground: 190 25% 96%; /* Light text on teal - Adjusted */
 
-    --accent: 30 90% 58%; /* Bright Orange - for highlights */
-    --accent-foreground: 0 0% 100%; /* White */
+    --accent: 30 90% 58%; /* Bright Orange - for highlights - Kept */
+    --accent-foreground: 0 0% 100%; /* White - Kept */
     
-    --destructive: 0 75% 55%; /* Clear Red */
-    --destructive-foreground: 0 0% 100%; /* White */
+    --destructive: 0 80% 60%; /* Clear Red - Adjusted */
+    --destructive-foreground: 0 0% 100%; /* White - Kept */
 
-    --ring: 215 70% 65%; /* Lighter primary blue for focus rings */
-    --radius: 0.5rem; /* Standardized rounded corners */
+    --ring: 215 75% 60%; /* Adjusted primary blue for focus rings - Adjusted */
+    --radius: 0.5rem; /* Standardized rounded corners - Kept */
 
-    /* Shadow Definitions for Subtle 3D Look */
-    /* Using a dark grayish blue for shadows, similar to original but will appear softer with low alpha */
+    /* Shadow Definitions for Subtle 3D Look - Refined Alphas */
     --shadow-color-rgb: 34, 41, 47; 
     
-    --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.04), 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.03);
-    --shadow-md: 0 3px 5px -1px rgb(var(--shadow-color-rgb) / 0.05), 0 2px 3px -2px rgb(var(--shadow-color-rgb) / 0.04);
-    --shadow-lg: 0 8px 10px -3px rgb(var(--shadow-color-rgb) / 0.06), 0 3px 5px -4px rgb(var(--shadow-color-rgb) / 0.05);
-    --shadow-xl: 0 15px 20px -5px rgb(var(--shadow-color-rgb) / 0.07), 0 6px 8px -6px rgb(var(--shadow-color-rgb) / 0.06);
-    --shadow-inset: inset 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.04);
+    --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.03), 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.02);
+    --shadow-md: 0 3px 5px -1px rgb(var(--shadow-color-rgb) / 0.04), 0 2px 3px -2px rgb(var(--shadow-color-rgb) / 0.03);
+    --shadow-lg: 0 8px 10px -3px rgb(var(--shadow-color-rgb) / 0.05), 0 3px 5px -4px rgb(var(--shadow-color-rgb) / 0.04);
+    --shadow-xl: 0 15px 20px -5px rgb(var(--shadow-color-rgb) / 0.06), 0 6px 8px -6px rgb(var(--shadow-color-rgb) / 0.05);
+    --shadow-inset: inset 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.03);
 
-    /* Button specific shadows for a "raised" effect */
+    /* Button specific shadows for a "raised" effect - Kept */
     --shadow-button: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.07), 0 1px 1px 0 rgb(var(--shadow-color-rgb) / 0.05);
     --shadow-button-hover: 0 2px 4px -1px rgb(var(--shadow-color-rgb) / 0.09), 0 1px 2px -2px rgb(var(--shadow-color-rgb) / 0.07);
 
-    /* Chart colors */
-    --chart-1: hsl(var(--primary)); /* Blue */
-    --chart-2: hsl(var(--secondary)); /* Teal */
-    --chart-3: hsl(var(--accent)); /* Orange */
-    --chart-4: 100 70% 50%;  /* Lime Green */
-    --chart-5: 280 70% 60%; /* Purple */
+    /* Chart colors - Kept */
+    --chart-1: hsl(var(--primary)); 
+    --chart-2: hsl(var(--secondary)); 
+    --chart-3: hsl(var(--accent)); 
+    --chart-4: 100 70% 50%;  
+    --chart-5: 280 70% 60%; 
   }
 
   .dark {
-    /* Dark Theme - Consistent with the light theme's palette but inverted */
-    --background: 220 20% 12%; /* Dark desaturated blue */
-    --foreground: 220 25% 92%; /* Very light cool gray */
+    /* Dark Theme - Consistent with the light theme's palette but inverted - Refined */
+    --background: 220 20% 10%; /* Dark desaturated blue - Adjusted */
+    --foreground: 220 25% 94%; /* Very light cool gray - Adjusted */
     
-    --muted: 220 15% 20%; /* Darker muted cool gray */
-    --muted-foreground: 220 20% 65%; /* Lighter muted foreground */
+    --muted: 220 15% 18%; /* Darker muted cool gray - Adjusted */
+    --muted-foreground: 220 20% 70%; /* Lighter muted foreground - Adjusted */
 
-    --popover: 220 15% 8%; /* Very dark popover background */
+    --popover: 220 15% 7%; /* Very dark popover background - Adjusted */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 220 15% 10%; /* Very dark card background */
+    --card: 220 15% 9%; /* Very dark card background - Adjusted */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 220 15% 25%; /* Darker border */
-    --input: 220 15% 16%; /* Dark input background */
+    --border: 220 15% 22%; /* Darker border - Adjusted */
+    --input: 220 15% 15%; /* Dark input background - Adjusted */
 
-    --primary: 215 75% 60%; /* Brighter blue for dark mode */
+    --primary: 215 75% 60%; /* Brighter blue for dark mode - Kept */
     --primary-foreground: 0 0% 100%; 
 
-    --secondary: 180 55% 50%; /* Brighter teal for dark mode */
-    --secondary-foreground: 180 30% 95%; 
+    --secondary: 190 50% 55%; /* Brighter, adjusted teal for dark mode - Adjusted */
+    --secondary-foreground: 190 25% 96%; /* Adjusted */
 
-    --accent: 30 85% 62%; /* Brighter orange for dark mode */
+    --accent: 30 85% 62%; /* Brighter orange for dark mode - Kept */
     --accent-foreground: 0 0% 100%; 
     
-    --destructive: 0 70% 60%; /* Adjusted red for dark mode */
+    --destructive: 0 75% 65%; /* Adjusted red for dark mode - Adjusted */
     --destructive-foreground: 0 0% 100%;
 
-    --ring: 215 70% 70%; /* Lighter primary blue for focus rings */
+    --ring: 215 70% 70%; /* Lighter primary blue for focus rings - Kept */
     
-    /* Darker, more pronounced shadows for dark mode */
+    /* Darker, more pronounced shadows for dark mode - Refined Alphas */
     --shadow-color-rgb: 0, 0, 0; 
     
-    --shadow-sm: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.07);
-    --shadow-md: 0 5px 7px -1px rgb(var(--shadow-color-rgb) / 0.09), 0 3px 4px -2px rgb(var(--shadow-color-rgb) / 0.09);
-    --shadow-lg: 0 12px 17px -3px rgb(var(--shadow-color-rgb) / 0.1), 0 5px 7px -4px rgb(var(--shadow-color-rgb) / 0.1);
-    --shadow-xl: 0 22px 28px -5px rgb(var(--shadow-color-rgb) / 0.12), 0 9px 11px -6px rgb(var(--shadow-color-rgb) / 0.12);
-    --shadow-inset: inset 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.08);
+    --shadow-sm: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.06);
+    --shadow-md: 0 5px 7px -1px rgb(var(--shadow-color-rgb) / 0.08), 0 3px 4px -2px rgb(var(--shadow-color-rgb) / 0.08);
+    --shadow-lg: 0 12px 17px -3px rgb(var(--shadow-color-rgb) / 0.09), 0 5px 7px -4px rgb(var(--shadow-color-rgb) / 0.09);
+    --shadow-xl: 0 22px 28px -5px rgb(var(--shadow-color-rgb) / 0.10), 0 9px 11px -6px rgb(var(--shadow-color-rgb) / 0.10);
+    --shadow-inset: inset 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.07);
     
+    /* Button specific shadows for dark mode - Kept */
     --shadow-button: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.1), 0 1px 2px -1px rgb(var(--shadow-color-rgb) / 0.08);
     --shadow-button-hover: 0 4px 6px -1px rgb(var(--shadow-color-rgb) / 0.12), 0 2px 4px -2px rgb(var(--shadow-color-rgb) / 0.12);
   }
