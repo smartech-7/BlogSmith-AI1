@@ -392,7 +392,7 @@ export function ContentGenerator() {
               <TabsTrigger value="headings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-5 w-5" />Suggest Headings</TabsTrigger>
             </TabsList>
             <TabsContent value="blog">
-              <Card className="shadow-xl transition-shadow duration-300 border border-primary/30 bg-card">
+              <Card className="shadow-xl transition-shadow duration-300 border border-border bg-card">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl flex items-center font-semibold"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
                   <CardDescription className="text-muted-foreground">Craft compelling, SEO-optimized blog articles. Input your keywords, tone, and length.</CardDescription>
@@ -462,7 +462,7 @@ export function ContentGenerator() {
               </Card>
             </TabsContent>
             <TabsContent value="social">
-               <Card className="shadow-xl transition-shadow duration-300 border border-primary/30 bg-card">
+               <Card className="shadow-xl transition-shadow duration-300 border border-border bg-card">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl flex items-center font-semibold"><MessageSquare className="mr-2 h-6 w-6 text-primary" />Create Social Media Post</CardTitle>
                   <CardDescription className="text-muted-foreground">Generate engaging posts for your social media platforms.</CardDescription>
@@ -524,7 +524,7 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-primary/20 shadow-xl bg-card">
+          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-border/70 shadow-xl bg-card">
             <CardHeader className="pb-3 border-b border-border/50">
               <CardTitle className="text-2xl flex items-center font-semibold"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription className="text-muted-foreground text-sm">
@@ -608,4 +608,3 @@ export function ContentGenerator() {
     </>
   );
 }
-

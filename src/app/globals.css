@@ -5,100 +5,102 @@
 
 @layer base {
   :root {
-    /* Base Colors for 3D look */
-    --background: 210 30% 97%; /* Very light cool gray, almost white */
-    --foreground: 210 15% 25%; /* Dark grayish blue */
+    /* Light Theme - Modern & Clean with Depth */
+    --background: 220 25% 98%; /* Very light cool gray */
+    --foreground: 220 25% 15%; /* Dark desaturated blue */
     
-    --muted: 210 20% 92%; /* Light muted cool gray */
-    --muted-foreground: 210 15% 45%; /* Medium muted cool gray */
+    --muted: 220 20% 90%; /* Light muted cool gray */
+    --muted-foreground: 220 15% 40%; /* Medium muted cool gray */
 
-    --popover: 0 0% 100%; /* White for popovers */
+    --popover: 0 0% 100%; /* Pure white for popovers */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 0 0% 100%; /* White for cards, to make shadows pop */
+    --card: 0 0% 100%; /* Pure white for cards */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 210 15% 85%; /* Softer border color */
-    --input: 0 0% 100%; /* White input background for inset shadow */
+    --border: 220 15% 88%; /* Soft cool gray border */
+    --input: 220 20% 96%; /* Very light gray for input, slightly off-white */
 
     /* Primary, Accent & Secondary Colors */
-    --primary: 210 90% 50%; /* Vibrant Blue */
+    --primary: 215 80% 55%; /* Vibrant Blue */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 140 60% 65%; /* Softer Green - Adjusted for better harmony */
-    --secondary-foreground: 140 35% 25%; /* Darker Green text for contrast */
+    --secondary: 180 60% 45%; /* Teal */
+    --secondary-foreground: 180 30% 95%; /* Light text on teal */
 
-    --accent: 25 90% 55%; /* Vibrant Orange */
-    --accent-foreground: 0 0% 100%; /* White text on orange for better readability */
+    --accent: 30 90% 58%; /* Bright Orange - for highlights */
+    --accent-foreground: 0 0% 100%; /* White */
     
-    --destructive: 0 80% 60%; /* Destructive red */
+    --destructive: 0 75% 55%; /* Clear Red */
     --destructive-foreground: 0 0% 100%; /* White */
 
-    --ring: 210 90% 60%; /* Lighter primary blue for focus rings */
-    --radius: 0.75rem; /* Consistent rounded corners */
+    --ring: 215 70% 65%; /* Lighter primary blue for focus rings */
+    --radius: 0.5rem; /* Standardized rounded corners */
 
-    /* Shadow Definitions for 3D Look */
-    --shadow-color-rgb: 34, 41, 47; /* Dark cool gray for shadows (rgb values) */
+    /* Shadow Definitions for Subtle 3D Look */
+    /* Using a dark grayish blue for shadows, similar to original but will appear softer with low alpha */
+    --shadow-color-rgb: 34, 41, 47; 
     
-    --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(var(--shadow-color-rgb) / 0.08), 0 2px 4px -2px rgb(var(--shadow-color-rgb) / 0.08);
-    --shadow-lg: 0 10px 15px -3px rgb(var(--shadow-color-rgb) / 0.09), 0 4px 6px -4px rgb(var(--shadow-color-rgb) / 0.09);
-    --shadow-xl: 0 20px 25px -5px rgb(var(--shadow-color-rgb) / 0.1), 0 8px 10px -6px rgb(var(--shadow-color-rgb) / 0.1);
-    --shadow-inset: inset 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.05);
+    --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.04), 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.03);
+    --shadow-md: 0 3px 5px -1px rgb(var(--shadow-color-rgb) / 0.05), 0 2px 3px -2px rgb(var(--shadow-color-rgb) / 0.04);
+    --shadow-lg: 0 8px 10px -3px rgb(var(--shadow-color-rgb) / 0.06), 0 3px 5px -4px rgb(var(--shadow-color-rgb) / 0.05);
+    --shadow-xl: 0 15px 20px -5px rgb(var(--shadow-color-rgb) / 0.07), 0 6px 8px -6px rgb(var(--shadow-color-rgb) / 0.06);
+    --shadow-inset: inset 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.04);
 
     /* Button specific shadows for a "raised" effect */
-    --shadow-button: 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.1), 0 1px 2px -1px rgb(var(--shadow-color-rgb) / 0.08);
-    --shadow-button-hover: 0 6px 10px -2px rgb(var(--shadow-color-rgb) / 0.12), 0 3px 5px -3px rgb(var(--shadow-color-rgb) / 0.12);
+    --shadow-button: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.07), 0 1px 1px 0 rgb(var(--shadow-color-rgb) / 0.05);
+    --shadow-button-hover: 0 2px 4px -1px rgb(var(--shadow-color-rgb) / 0.09), 0 1px 2px -2px rgb(var(--shadow-color-rgb) / 0.07);
 
-    /* Updated Chart colors to match new theme */
+    /* Chart colors */
     --chart-1: hsl(var(--primary)); /* Blue */
-    --chart-2: hsl(var(--accent)); /* Orange */
-    --chart-3: 140 50% 55%; /* Green */
-    --chart-4: 50 95% 55%;  /* Yellow */
-    --chart-5: 270 70% 60%; /* Purple */
+    --chart-2: hsl(var(--secondary)); /* Teal */
+    --chart-3: hsl(var(--accent)); /* Orange */
+    --chart-4: 100 70% 50%;  /* Lime Green */
+    --chart-5: 280 70% 60%; /* Purple */
   }
 
   .dark {
-    /* Dark Theme - Using the same base colors but inverted for dark mode consistency */
-    --background: 210 15% 15%; 
-    --foreground: 210 30% 90%; /* Lighter foreground for dark mode */
+    /* Dark Theme - Consistent with the light theme's palette but inverted */
+    --background: 220 20% 12%; /* Dark desaturated blue */
+    --foreground: 220 25% 92%; /* Very light cool gray */
     
-    --muted: 210 15% 25%;
-    --muted-foreground: 210 20% 70%; /* Lighter muted foreground */
+    --muted: 220 15% 20%; /* Darker muted cool gray */
+    --muted-foreground: 220 20% 65%; /* Lighter muted foreground */
 
-    --popover: 210 15% 10%; 
+    --popover: 220 15% 8%; /* Very dark popover background */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 210 15% 12%; 
+    --card: 220 15% 10%; /* Very dark card background */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 210 15% 30%;
-    --input: 210 15% 20%;
+    --border: 220 15% 25%; /* Darker border */
+    --input: 220 15% 16%; /* Dark input background */
 
-    --primary: 210 80% 60%; /* Slightly brighter blue for dark mode */
+    --primary: 215 75% 60%; /* Brighter blue for dark mode */
     --primary-foreground: 0 0% 100%; 
 
-    --secondary: 140 50% 40%; /* Adjusted green for dark mode */
-    --secondary-foreground: 140 30% 85%; /* Lighter green text */
+    --secondary: 180 55% 50%; /* Brighter teal for dark mode */
+    --secondary-foreground: 180 30% 95%; 
 
-    --accent: 25 80% 60%; /* Slightly brighter orange for dark mode */
+    --accent: 30 85% 62%; /* Brighter orange for dark mode */
     --accent-foreground: 0 0% 100%; 
     
-    --destructive: 0 70% 55%; /* Adjusted red for dark mode */
+    --destructive: 0 70% 60%; /* Adjusted red for dark mode */
     --destructive-foreground: 0 0% 100%;
 
-    --ring: 210 80% 65%; /* Lighter primary blue for focus rings */
+    --ring: 215 70% 70%; /* Lighter primary blue for focus rings */
     
-    --shadow-color-rgb: 0, 0, 0; /* Darker shadows for dark mode */
+    /* Darker, more pronounced shadows for dark mode */
+    --shadow-color-rgb: 0, 0, 0; 
     
-    --shadow-sm: 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.1);
-    --shadow-md: 0 5px 8px -1px rgb(var(--shadow-color-rgb) / 0.12), 0 3px 5px -2px rgb(var(--shadow-color-rgb) / 0.12);
-    --shadow-lg: 0 12px 18px -3px rgb(var(--shadow-color-rgb) / 0.15), 0 5px 8px -4px rgb(var(--shadow-color-rgb) / 0.15);
-    --shadow-xl: 0 22px 28px -5px rgb(var(--shadow-color-rgb) / 0.18), 0 10px 12px -6px rgb(var(--shadow-color-rgb) / 0.18);
-    --shadow-inset: inset 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.1);
+    --shadow-sm: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.07);
+    --shadow-md: 0 5px 7px -1px rgb(var(--shadow-color-rgb) / 0.09), 0 3px 4px -2px rgb(var(--shadow-color-rgb) / 0.09);
+    --shadow-lg: 0 12px 17px -3px rgb(var(--shadow-color-rgb) / 0.1), 0 5px 7px -4px rgb(var(--shadow-color-rgb) / 0.1);
+    --shadow-xl: 0 22px 28px -5px rgb(var(--shadow-color-rgb) / 0.12), 0 9px 11px -6px rgb(var(--shadow-color-rgb) / 0.12);
+    --shadow-inset: inset 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.08);
     
-    --shadow-button: 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.15), 0 2px 3px -1px rgb(var(--shadow-color-rgb) / 0.12);
-    --shadow-button-hover: 0 7px 12px -2px rgb(var(--shadow-color-rgb) / 0.18), 0 4px 6px -3px rgb(var(--shadow-color-rgb) / 0.18);
+    --shadow-button: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.1), 0 1px 2px -1px rgb(var(--shadow-color-rgb) / 0.08);
+    --shadow-button-hover: 0 4px 6px -1px rgb(var(--shadow-color-rgb) / 0.12), 0 2px 4px -2px rgb(var(--shadow-color-rgb) / 0.12);
   }
 }
 
