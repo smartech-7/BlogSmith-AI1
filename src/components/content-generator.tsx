@@ -10,12 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
-import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post-flow';
+import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
 import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform-schema';
+import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -51,17 +51,17 @@ const toneOptions = [
 const featureCards = [
   {
     icon: <Wand2 className="h-8 w-8 text-primary mb-3" />,
-    title: "Create Original Content",
+    title: "Create Good Content",
     description: "Generate unique, SEO-optimized articles. Easy for a 6th-grader to read, designed to rank well.",
   },
   {
     icon: <Search className="h-8 w-8 text-primary mb-3" />,
-    title: "SEO Optimized by Design",
+    title: "Help People Discover Your Content",
     description: "Uses your main and related keywords to craft content that search engines will love, improving visibility.",
   },
   {
     icon: <ImageIcon className="h-8 w-8 text-primary mb-3" />,
-    title: "Visually Engaging",
+    title: "Create Modern Looking & Visually Appealing Content",
     description: "Automatically add AI-generated images related to your content, making your posts more appealing.",
   },
    {
@@ -95,6 +95,9 @@ export function ContentGenerator() {
     setGeneratedSocialMediaPost(null); 
     try {
       const blogPostResult = await generateBlogPost(data);
+      if (!blogPostResult || !blogPostResult.title || !blogPostResult.content) {
+        throw new Error("The AI failed to generate the blog post content as expected. This might be due to the complexity of the request or an internal issue. Please try simplifying your keywords or topic, or try again later.");
+      }
       setGeneratedBlogPost(blogPostResult);
       toast({ title: "Blog Post Generated!", description: "Your blog post has been successfully generated." });
     } catch (error) {
@@ -103,10 +106,7 @@ export function ContentGenerator() {
       if (error instanceof Error && error.message) {
         if (error.message.includes('blocked') || error.message.includes('safety settings')) {
              errorMessage = "Content generation was blocked due to safety settings. Please revise your input or try a different topic.";
-        } else if (error.message.includes('Failed to generate blog post title or content')) {
-            errorMessage = "The AI failed to generate the blog post content as expected. This might be due to the complexity of the request or an internal issue. Please try simplifying your keywords or topic, or try again later.";
-        }
-         else {
+        } else {
              errorMessage = `Failed to generate blog post: ${error.message}. Please try again.`;
         }
       }
@@ -337,14 +337,14 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="shadow-xl rounded-lg border-primary/10 border bg-card sticky top-6 max-h-[calc(100vh-5rem)] h-auto flex flex-col">
+          <Card className="shadow-xl rounded-lg border-primary/10 border bg-card sticky top-6 h-[calc(100vh-5rem)] flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
                 Your AI-generated content will appear below. Review, copy, or export it.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4 min-h-[300px] md:min-h-[400px] lg:min-h-0">
+            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
               {isLoading && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -399,3 +399,4 @@ export function ContentGenerator() {
     </>
   );
 }
+
