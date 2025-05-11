@@ -201,51 +201,58 @@ export function ContentGenerator() {
     setIsLoading(true);
 
     try {
+      // Temporarily set body background to white for PDF generation if needed
+      // document.body.style.backgroundColor = 'white';
+      
       const canvas = await html2canvas(input, {
         scale: 2,
         useCORS: true,
         logging: false,
+        // backgroundColor: '#ffffff', // Ensure canvas background is white
       });
+
+      // document.body.style.backgroundColor = ''; // Reset body background
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth(); // in mm
-      // const pdfHeight = pdf.internal.pageSize.getHeight(); // in mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // in mm A4 page height
 
       const canvasWidth = imgProps.width;
       const canvasHeight = imgProps.height;
-
+      
       // Calculate the height of the image on the PDF page, fitting the width
       const scaledImgHeight = (canvasHeight * pdfWidth) / canvasWidth;
 
-      let positionOnCanvas = 0; // Current y position on the source image (canvas)
+      let positionOnCanvas = 0; // Current y position on the source image (canvas) in canvas pixels
       
       while (positionOnCanvas < canvasHeight) {
-        // Height of the image chunk to take from the canvas, in canvas pixels
-        // This corresponds to one PDF page height, scaled back to canvas pixel dimensions
-        const sourceChunkHeight = Math.min(
+        // Determine the height of the current chunk to draw from the source canvas
+        // This is the canvas equivalent of one PDF page height
+        const sourceChunkHeightPx = Math.min(
           canvasHeight - positionOnCanvas, 
-          pdf.internal.pageSize.getHeight() * (canvasWidth / pdfWidth) 
+          pdfHeight * (canvasWidth / pdfWidth) // Convert PDF page height to canvas pixel height
         );
         
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = canvasWidth;
-        tempCanvas.height = sourceChunkHeight;
+        tempCanvas.height = sourceChunkHeightPx;
         const tempCtx = tempCanvas.getContext('2d');
         
         if (tempCtx) {
           // Draw the portion of the original canvas onto the temporary canvas
-          tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeight, 0, 0, canvasWidth, sourceChunkHeight);
+          tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeightPx, 0, 0, canvasWidth, sourceChunkHeightPx);
           const pageImgData = tempCanvas.toDataURL('image/png');
 
-          if (positionOnCanvas > 0) {
+          if (positionOnCanvas > 0) { // Add new page for subsequent chunks
             pdf.addPage();
           }
           // Add the image from the temporary canvas to the PDF page, scaled to fit PDF page width
-          pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, sourceChunkHeight * (pdfWidth / canvasWidth));
-          positionOnCanvas += sourceChunkHeight;
+          // The height will be sourceChunkHeightPx scaled to PDF dimensions
+          pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, sourceChunkHeightPx * (pdfWidth / canvasWidth) );
+          positionOnCanvas += sourceChunkHeightPx;
         } else {
           throw new Error("Could not create temporary canvas context for PDF generation.");
         }
@@ -316,7 +323,7 @@ export function ContentGenerator() {
               <TabsTrigger value="headings"><ListChecks className="mr-2 h-5 w-5" />Suggest Headings</TabsTrigger>
             </TabsList>
             <TabsContent value="blog">
-              <Card className="shadow-xl rounded-lg border-primary/20 border bg-card">
+              <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg border-primary/20 border bg-card">
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
                   <CardDescription>Craft compelling, SEO-optimized blog articles. Input your keywords, tone, and length.</CardDescription>
@@ -378,7 +385,7 @@ export function ContentGenerator() {
               </Card>
             </TabsContent>
             <TabsContent value="social">
-               <Card className="shadow-xl rounded-lg border-primary/20 border bg-card">
+               <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg border-primary/20 border bg-card">
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center"><MessageSquare className="mr-2 h-6 w-6 text-primary" />Create Social Media Post</CardTitle>
                   <CardDescription>Generate engaging posts for your social media platforms. Provide a topic and choose your platform.</CardDescription>
@@ -432,7 +439,7 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="shadow-xl rounded-lg border-primary/10 border bg-card sticky top-6 h-[calc(100vh-5rem)] flex flex-col">
+          <Card className="shadow-lg rounded-lg border-primary/10 border bg-card sticky top-6 h-[calc(100vh-5rem)] flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
@@ -463,7 +470,7 @@ export function ContentGenerator() {
               )}
 
               {generatedBlogPost && activeTab === "blog" && (
-                <article ref={blogContentRef} className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
+                <article ref={blogContentRef} className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
                   {generatedBlogPost.thumbnailUrl && (
                     <figure className="mb-6">
                       <img
@@ -480,7 +487,7 @@ export function ContentGenerator() {
               )}
 
               {generatedSocialMediaPost && activeTab === "social" && (
-                 <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
+                 <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
                   <h3 className="text-xl font-semibold mb-2 border-b pb-2">{socialMediaForm.getValues('platform')} Post</h3>
                    <div dangerouslySetInnerHTML={{ __html: generatedSocialMediaPost.postContent.replace(/\n/g, '<br />') }} />
                    {generatedSocialMediaPost.hashtags && generatedSocialMediaPost.hashtags.length > 0 && (

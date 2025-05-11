@@ -60,7 +60,7 @@ export function SuggestHeadingsTool() {
   };
 
   return (
-    <Card className="shadow-xl rounded-lg border-primary/20 border bg-card">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg border-primary/20 border bg-card">
       <CardHeader>
         <CardTitle className="text-2xl flex items-center"><ListChecks className="mr-2 h-6 w-6 text-primary" />Suggest SEO Headings</CardTitle>
         <CardDescription>Get AI-powered heading suggestions to structure your content for better readability and SEO.</CardDescription>
@@ -123,5 +123,3 @@ export function SuggestHeadingsTool() {
     </Card>
   );
 }
-
-    

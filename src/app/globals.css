@@ -5,11 +5,11 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%; /* Very light, slightly cool gray */
+    --background: 210 40% 98%; /* Slightly brighter very light cool gray */
     --foreground: 210 10% 23%; /* Dark slate gray */
     
-    --muted: 210 20% 94%; /* Very light gray */
-    --muted-foreground: 210 10% 55%; /* Slightly lighter medium gray */
+    --muted: 210 30% 94%; /* Light gray, slightly more saturated */
+    --muted-foreground: 210 10% 50%; /* Medium gray */
 
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 210 10% 23%; /* Dark slate gray */
@@ -18,13 +18,13 @@
     --card-foreground: 210 10% 23%; /* Dark slate gray */
 
     --border: 210 20% 88%; /* Light gray for borders */
-    --input: 210 20% 96%; /* Very light gray for inputs */
+    --input: 210 30% 96%; /* Brighter very light gray for inputs */
 
     --primary: 205 70% 50%; /* Balanced blue */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 210 20% 90%; /* Lighter gray, complementary to background */
-    --secondary-foreground: 210 10% 40%; /* Medium gray */
+    --secondary: 210 30% 90%; /* Lighter gray, complementary to background */
+    --secondary-foreground: 210 10% 30%; /* Darker medium gray for better contrast */
 
     --accent: 205 70% 50%; /* Using primary blue for accent */
     --accent-foreground: 0 0% 100%; /* White */
@@ -33,7 +33,7 @@
     --destructive-foreground: 0 0% 98%;
 
     --ring: 205 70% 60%; /* Slightly lighter blue for focus rings */
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Slightly larger radius for a softer, more modern look */
 
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -41,61 +41,18 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     
-    --sidebar-background: 210 25% 96%;
-    --sidebar-foreground: 210 10% 30%;
-    --sidebar-primary: 205 70% 45%;
+    /* Sidebar variables remain, assuming sidebar might still be used or for consistency */
+    --sidebar-background: 210 35% 97%;
+    --sidebar-foreground: 210 10% 25%;
+    --sidebar-primary: 205 70% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 90%;
-    --sidebar-accent-foreground: 205 70% 45%;
-    --sidebar-border: 210 20% 85%;
-    --sidebar-ring: 205 70% 55%;
+    --sidebar-accent: 210 30% 92%;
+    --sidebar-accent-foreground: 205 70% 48%;
+    --sidebar-border: 210 20% 86%;
+    --sidebar-ring: 205 70% 58%;
   }
 
-  .dark {
-    --background: 210 15% 12%; /* Dark slate blue/gray */
-    --foreground: 210 15% 88%; /* Light gray */
-
-    --muted: 210 15% 22%; /* Dark muted background */
-    --muted-foreground: 210 15% 60%; /* Medium-light gray muted text */
-    
-    --popover: 210 15% 15%; /* Dark popover background */
-    --popover-foreground: 210 15% 88%; /* Light gray */
-
-    --card: 210 15% 18%; /* Slightly lighter dark gray for cards */
-    --card-foreground: 210 15% 88%; /* Light gray */
-
-    --border: 210 15% 30%; /* Darker border */
-    --input: 210 15% 20%; /* Dark input background */
-
-    --primary: 205 75% 60%; /* Brighter blue for dark mode */
-    --primary-foreground: 0 0% 100%; /* White */
-
-    --secondary: 210 15% 25%; /* Darker gray */
-    --secondary-foreground: 210 15% 70%; /* Lighter gray for secondary text */
-    
-    --accent: 205 75% 60%; /* Using primary blue for accent */
-    --accent-foreground: 0 0% 100%; /* White */
-
-    --destructive: 0 70% 50%; /* Adjusted destructive for dark mode */
-    --destructive-foreground: 0 0% 98%;
-
-    --ring: 205 75% 70%; /* Even brighter blue for focus rings */
-
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-
-    --sidebar-background: 210 15% 10%;
-    --sidebar-foreground: 210 15% 85%;
-    --sidebar-primary: 205 75% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 15% 20%;
-    --sidebar-accent-foreground: 205 75% 65%;
-    --sidebar-border: 210 15% 25%;
-    --sidebar-ring: 205 75% 70%;
-  }
+  /* Removed .dark block */
 }
 
 @layer base {
