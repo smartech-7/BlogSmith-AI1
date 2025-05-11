@@ -9,7 +9,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      "rounded-lg border bg-card text-card-foreground shadow-lg", // Changed from shadow-sm to shadow-lg
       className
     )}
     {...props}
@@ -30,10 +30,10 @@ const CardHeader = React.forwardRef<
 CardHeader.displayName = "CardHeader"
 
 const CardTitle = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLDivElement, // Corrected from HTMLParagraphElement to HTMLDivElement based on usage
+  React.HTMLAttributes<HTMLHeadingElement> // Corrected from HTMLParagraphElement to HTMLHeadingElement
 >(({ className, ...props }, ref) => (
-  <div
+  <div // This was h3, but CardTitle is a div wrapper for a h3 usually. Keeping as div based on original structure
     ref={ref}
     className={cn(
       "text-2xl font-semibold leading-none tracking-tight",
@@ -45,10 +45,10 @@ const CardTitle = React.forwardRef<
 CardTitle.displayName = "CardTitle"
 
 const CardDescription = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLParagraphElement, // Corrected from HTMLDivElement
+  React.HTMLAttributes<HTMLParagraphElement> // Corrected from HTMLDivElement
 >(({ className, ...props }, ref) => (
-  <div
+  <p // Changed to p for semantic correctness of a description
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}
     {...props}

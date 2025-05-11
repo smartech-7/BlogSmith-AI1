@@ -3,7 +3,6 @@ import type { Config } from "tailwindcss";
 const { fontFamily } = require("tailwindcss/defaultTheme");
 
 export default {
-    darkMode: ["class"],
     content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -55,15 +54,15 @@ export default {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			},
-  			sidebar: {
-  				DEFAULT: 'hsl(var(--sidebar-background))',
-  				foreground: 'hsl(var(--sidebar-foreground))',
-  				primary: 'hsl(var(--sidebar-primary))',
-  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-  				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
-  				ring: 'hsl(var(--sidebar-ring))'
+  			sidebar: { // Keeping sidebar for completeness, though not explicitly used in current view
+  				DEFAULT: 'hsl(var(--sidebar-background, var(--background)))', // Fallback to main background
+  				foreground: 'hsl(var(--sidebar-foreground, var(--foreground)))', // Fallback to main foreground
+  				primary: 'hsl(var(--sidebar-primary, var(--primary)))',
+  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground, var(--primary-foreground)))',
+  				accent: 'hsl(var(--sidebar-accent, var(--accent)))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground, var(--accent-foreground)))',
+  				border: 'hsl(var(--sidebar-border, var(--border)))',
+  				ring: 'hsl(var(--sidebar-ring, var(--ring)))'
   			}
   		},
   		borderRadius: {
@@ -71,6 +70,15 @@ export default {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
+      boxShadow: {
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        xl: 'var(--shadow-xl)',
+        inset: 'var(--shadow-inset)',
+        button: 'var(--shadow-button)',
+        'button-hover': 'var(--shadow-button-hover)',
+      },
   		keyframes: {
   			'accordion-down': {
   				from: {

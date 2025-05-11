@@ -5,54 +5,59 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Slightly brighter very light cool gray */
-    --foreground: 210 10% 23%; /* Dark slate gray */
+    /* Base Colors for 3D look */
+    --background: 220 60% 97%; /* Very light cool gray-blue */
+    --foreground: 220 20% 30%; /* Dark slate blue */
     
-    --muted: 210 30% 94%; /* Light gray, slightly more saturated */
-    --muted-foreground: 210 10% 50%; /* Medium gray */
+    --muted: 220 30% 90%; /* Light muted gray-blue */
+    --muted-foreground: 220 15% 50%; /* Medium muted gray-blue */
 
-    --popover: 0 0% 100%; /* White */
-    --popover-foreground: 210 10% 23%; /* Dark slate gray */
+    --popover: 0 0% 100%; /* White for popovers */
+    --popover-foreground: 220 20% 30%;
 
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 210 10% 23%; /* Dark slate gray */
+    --card: 0 0% 100%; /* White for cards, to make shadows pop */
+    --card-foreground: 220 20% 30%;
 
-    --border: 210 20% 88%; /* Light gray for borders */
-    --input: 210 30% 96%; /* Brighter very light gray for inputs */
+    --border: 220 25% 88%; /* Softer border color */
+    --input: 0 0% 100%; /* White input background for inset shadow */
 
-    --primary: 205 70% 50%; /* Balanced blue */
+    /* Primary & Accent Colors for "pop" */
+    --primary: 210 90% 55%; /* Vibrant, slightly lighter blue */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 210 30% 90%; /* Lighter gray, complementary to background */
-    --secondary-foreground: 210 10% 30%; /* Darker medium gray for better contrast */
+    --secondary: 220 20% 92%; /* Light gray-blue for secondary elements */
+    --secondary-foreground: 220 15% 35%; /* Darker gray-blue for secondary text */
 
-    --accent: 205 70% 50%; /* Using primary blue for accent */
+    --accent: 210 90% 55%; /* Using primary blue for accent */
     --accent-foreground: 0 0% 100%; /* White */
     
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 80% 60%; /* Destructive red */
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --ring: 205 70% 60%; /* Slightly lighter blue for focus rings */
-    --radius: 0.75rem; /* Slightly larger radius for a softer, more modern look */
+    --ring: 210 90% 65%; /* Lighter blue for focus rings */
+    --radius: 0.75rem; /* Consistent rounded corners */
 
+    /* Shadow Definitions for 3D Look */
+    --shadow-color-rgb: 34, 41, 47; /* Dark cool gray for shadows (rgb values) */
+    
+    --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color-rgb) / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(var(--shadow-color-rgb) / 0.08), 0 2px 4px -2px rgb(var(--shadow-color-rgb) / 0.08);
+    --shadow-lg: 0 10px 15px -3px rgb(var(--shadow-color-rgb) / 0.09), 0 4px 6px -4px rgb(var(--shadow-color-rgb) / 0.09);
+    --shadow-xl: 0 20px 25px -5px rgb(var(--shadow-color-rgb) / 0.1), 0 8px 10px -6px rgb(var(--shadow-color-rgb) / 0.1);
+    --shadow-inset: inset 0 2px 4px 0 rgb(var(--shadow-color-rgb) / 0.05);
+
+    /* Button specific shadows for a "raised" effect */
+    --shadow-button: 0 1px 3px 0 rgb(var(--shadow-color-rgb) / 0.1), 0 1px 2px -1px rgb(var(--shadow-color-rgb) / 0.08);
+    --shadow-button-hover: 0 6px 10px -2px rgb(var(--shadow-color-rgb) / 0.12), 0 3px 5px -3px rgb(var(--shadow-color-rgb) / 0.12);
+
+
+    /* Chart colors (can be kept or adjusted if needed) */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    
-    /* Sidebar variables remain, assuming sidebar might still be used or for consistency */
-    --sidebar-background: 210 35% 97%;
-    --sidebar-foreground: 210 10% 25%;
-    --sidebar-primary: 205 70% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 30% 92%;
-    --sidebar-accent-foreground: 205 70% 48%;
-    --sidebar-border: 210 20% 86%;
-    --sidebar-ring: 205 70% 58%;
   }
-
-  /* Removed .dark block */
 }
 
 @layer base {

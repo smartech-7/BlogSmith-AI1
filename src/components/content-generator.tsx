@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
 import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
-import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer } from 'lucide-react';
+import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SuggestHeadingsTool } from '@/components/suggest-headings-tool';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
 
 
 const blogFormSchema = z.object({
@@ -28,6 +29,7 @@ const blogFormSchema = z.object({
   tone: z.string().min(1, { message: "Please select a tone." }),
   numPictures: z.coerce.number().int().min(0, { message: "Number of pictures must be 0 or more." }).max(5, { message: "Number of pictures can be at most 5." }),
   wordCount: z.coerce.number().int().min(700, { message: "Word count must be at least 700." }).max(3000, { message: "Word count must be at most 3000." }),
+  seoKeywords: z.string().optional().describe("Optional comma-separated keywords for SEO optimization."),
 });
 type BlogFormData = z.infer<typeof blogFormSchema>;
 
@@ -35,6 +37,7 @@ const socialMediaFormSchema = z.object({
   topic: z.string().min(5, "Topic must be at least 5 characters.").max(200, "Topic must be at most 200 characters."),
   platform: SocialMediaPlatformSchema,
   instructions: z.string().optional(),
+  seoKeywords: z.string().optional().describe("Optional comma-separated keywords for SEO optimization."),
 });
 type SocialMediaFormData = z.infer<typeof socialMediaFormSchema>;
 
@@ -55,22 +58,22 @@ const featureCards = [
   {
     icon: <Wand2 className="h-8 w-8 text-primary mb-3" />,
     title: "Create Good Content",
-    description: "Generate unique, SEO-optimized articles. Easy for a 6th-grader to read, designed to rank well.",
+    description: "Generate unique articles. Easy for a 6th-grader to read, designed to rank well.",
   },
   {
     icon: <Search className="h-8 w-8 text-primary mb-3" />,
     title: "Help People Discover Your Content",
-    description: "Uses your main and related keywords to craft content that search engines will love, improving visibility.",
+    description: "Uses keywords to craft content that search engines will love, improving visibility.",
   },
   {
     icon: <ImageIcon className="h-8 w-8 text-primary mb-3" />,
-    title: "Create Modern Looking & Visually Appealing Content",
-    description: "Automatically add AI-generated images related to your content, making your posts more appealing.",
+    title: "Visually Appealing Content",
+    description: "Automatically add AI-generated images, making your posts more engaging.",
   },
    {
     icon: <Share2 className="h-8 w-8 text-primary mb-3" />,
     title: "Social Media Ready",
-    description: "Craft posts tailored for different social media platforms, maximizing your reach and impact online.",
+    description: "Craft posts tailored for different social media platforms, maximizing your reach.",
   }
 ];
 
@@ -85,12 +88,12 @@ export function ContentGenerator() {
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
-    defaultValues: { mainKeyword: '', relatedKeywords: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700 },
+    defaultValues: { mainKeyword: '', relatedKeywords: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700, seoKeywords: '' },
   });
 
   const socialMediaForm = useForm<SocialMediaFormData>({
     resolver: zodResolver(socialMediaFormSchema),
-    defaultValues: { topic: "", platform: "Twitter", instructions: "" },
+    defaultValues: { topic: "", platform: "Twitter", instructions: "", seoKeywords: '' },
   });
 
   useEffect(() => {
@@ -100,25 +103,33 @@ export function ContentGenerator() {
     }
   }, [activeTab]);
 
-  const onBlogSubmit = async (data: BlogFormData) => {
+ const onBlogSubmit = async (data: BlogFormData) => {
     setIsLoading(true);
     setGeneratedBlogPost(null);
-    setGeneratedSocialMediaPost(null); 
+    setGeneratedSocialMediaPost(null);
     try {
-      const blogPostResult = await generateBlogPost(data);
+      let blogPostResult = await generateBlogPost(data);
+
       if (!blogPostResult || !blogPostResult.title || !blogPostResult.content) {
-         let detailedError = "The AI model did not return the expected title or content.";
-        if (!blogPostResult) {
-            detailedError = "The AI model returned no output.";
-        } else if (!blogPostResult.title && !blogPostResult.content) {
-            detailedError = "The AI model returned neither title nor content.";
-        } else if (!blogPostResult.title) {
-            detailedError = "The AI model did not return a title.";
-        } else if (!blogPostResult.content) {
-            detailedError = "The AI model did not return content.";
-        }
-        throw new Error(detailedError);
+        let detailedError = "The AI model did not return the expected title or content.";
+        if (!blogPostResult) detailedError = "The AI model returned no output.";
+        else if (!blogPostResult.title && !blogPostResult.content) detailedError = "The AI model returned neither title nor content.";
+        else if (!blogPostResult.title) detailedError = "The AI model did not return a title.";
+        else if (!blogPostResult.content) detailedError = "The AI model did not return content.";
+        throw new Error(detailedError + " This might be due to the complexity of the request, an internal issue with the AI, or safety filters blocking the content. Please try simplifying your keywords or topic, ensure it complies with content policies, or try again later.");
       }
+      
+      if (data.seoKeywords && data.seoKeywords.trim() !== '') {
+        try {
+            const seoResult = await optimizeForSeo({ content: blogPostResult.content, keywords: data.seoKeywords });
+            blogPostResult.content = seoResult.optimizedContent;
+            toast({ title: "Blog Post SEO Optimized!", description: "Blog post content has been optimized for your SEO keywords." });
+        } catch (seoError: any) {
+            console.error("Error optimizing blog post for SEO:", seoError);
+            toast({ title: "SEO Optimization Issue", description: `Could not optimize for SEO: ${seoError.message}. Displaying original content.`, variant: "destructive" });
+        }
+      }
+
       setGeneratedBlogPost(blogPostResult);
       toast({ title: "Blog Post Generated!", description: "Your blog post has been successfully generated." });
     } catch (error) {
@@ -128,7 +139,7 @@ export function ContentGenerator() {
         if (error.message.includes('blocked') || error.message.includes('safety settings')) {
              errorMessage = "Content generation was blocked due to safety settings. Please revise your input or try a different topic.";
         } else {
-             errorMessage = `Failed to generate blog post: ${error.message}. Please try again.`;
+             errorMessage = `${error.message}`; // Use the detailed error message from the try block
         }
       }
       toast({ title: "Error Generating Blog Post", description: errorMessage, variant: "destructive" });
@@ -142,7 +153,19 @@ export function ContentGenerator() {
     setGeneratedSocialMediaPost(null);
     setGeneratedBlogPost(null);
     try {
-      const result = await generateSocialMediaPost(data);
+      let result = await generateSocialMediaPost(data);
+      
+      if (data.seoKeywords && data.seoKeywords.trim() !== '') {
+         try {
+            const seoResult = await optimizeForSeo({ content: result.postContent, keywords: data.seoKeywords });
+            result.postContent = seoResult.optimizedContent;
+            toast({ title: "Social Post SEO Optimized!", description: "Social media post content has been optimized for your SEO keywords." });
+        } catch (seoError: any) {
+            console.error("Error optimizing social post for SEO:", seoError);
+            toast({ title: "SEO Optimization Issue", description: `Could not optimize for SEO: ${seoError.message}. Displaying original content.`, variant: "destructive" });
+        }
+      }
+
       setGeneratedSocialMediaPost(result);
       toast({ title: "Social Media Post Generated!", description: `Your ${data.platform} post is ready.` });
     } catch (error) {
@@ -199,41 +222,40 @@ export function ContentGenerator() {
     }
 
     setIsLoading(true);
+    document.body.style.setProperty('--background-temp', 'hsl(0 0% 100%)');
+    input.classList.add('pdf-export-bg');
+
 
     try {
-      // Temporarily set body background to white for PDF generation if needed
-      // document.body.style.backgroundColor = 'white';
-      
       const canvas = await html2canvas(input, {
         scale: 2,
         useCORS: true,
         logging: false,
-        // backgroundColor: '#ffffff', // Ensure canvas background is white
+        backgroundColor: 'white', 
       });
+      
+      input.classList.remove('pdf-export-bg');
+      document.body.style.removeProperty('--background-temp');
 
-      // document.body.style.backgroundColor = ''; // Reset body background
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // in mm
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // in mm A4 page height
+      const pdfWidth = pdf.internal.pageSize.getWidth(); 
+      const pdfHeight = pdf.internal.pageSize.getHeight(); 
 
       const canvasWidth = imgProps.width;
       const canvasHeight = imgProps.height;
       
-      // Calculate the height of the image on the PDF page, fitting the width
       const scaledImgHeight = (canvasHeight * pdfWidth) / canvasWidth;
 
-      let positionOnCanvas = 0; // Current y position on the source image (canvas) in canvas pixels
+      let positionOnCanvas = 0; 
       
       while (positionOnCanvas < canvasHeight) {
-        // Determine the height of the current chunk to draw from the source canvas
-        // This is the canvas equivalent of one PDF page height
         const sourceChunkHeightPx = Math.min(
           canvasHeight - positionOnCanvas, 
-          pdfHeight * (canvasWidth / pdfWidth) // Convert PDF page height to canvas pixel height
+          pdfHeight * (canvasWidth / pdfWidth) 
         );
         
         const tempCanvas = document.createElement('canvas');
@@ -242,15 +264,14 @@ export function ContentGenerator() {
         const tempCtx = tempCanvas.getContext('2d');
         
         if (tempCtx) {
-          // Draw the portion of the original canvas onto the temporary canvas
+          tempCtx.fillStyle = 'white'; // Ensure background of chunk is white
+          tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
           tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeightPx, 0, 0, canvasWidth, sourceChunkHeightPx);
           const pageImgData = tempCanvas.toDataURL('image/png');
 
-          if (positionOnCanvas > 0) { // Add new page for subsequent chunks
+          if (positionOnCanvas > 0) { 
             pdf.addPage();
           }
-          // Add the image from the temporary canvas to the PDF page, scaled to fit PDF page width
-          // The height will be sourceChunkHeightPx scaled to PDF dimensions
           pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, sourceChunkHeightPx * (pdfWidth / canvasWidth) );
           positionOnCanvas += sourceChunkHeightPx;
         } else {
@@ -262,6 +283,8 @@ export function ContentGenerator() {
       toast({ title: "PDF Exported!", description: "Blog post exported as PDF." });
 
     } catch (error: any) {
+      input.classList.remove('pdf-export-bg');
+      document.body.style.removeProperty('--background-temp');
       console.error("Error exporting PDF:", error);
       toast({ title: "Error Exporting PDF", description: `Failed to export blog post as PDF. ${error.message}`, variant: "destructive" });
     } finally {
@@ -293,6 +316,15 @@ export function ContentGenerator() {
 
   return (
     <>
+      <style jsx global>{`
+        .pdf-export-bg {
+          background-color: var(--background-temp) !important;
+          color: black !important; /* Ensure text is visible on white background */
+        }
+        .pdf-export-bg img {
+           border-color: #ccc !important; /* Lighter border for PDF */
+        }
+      `}</style>
       <section className="mb-12 text-center">
         <h2 className="text-3xl font-bold mb-4 text-foreground">Supercharge Your Content Creation</h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -302,7 +334,7 @@ export function ContentGenerator() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {featureCards.map((feature, index) => (
-          <Card key={index} className="shadow-lg rounded-lg hover:shadow-xl transition-shadow duration-300 bg-card flex flex-col">
+          <Card key={index} className="hover:shadow-xl transition-shadow duration-300 flex flex-col">
             <CardHeader className="items-center">
               {feature.icon}
               <CardTitle className="text-xl text-center">{feature.title}</CardTitle>
@@ -323,7 +355,7 @@ export function ContentGenerator() {
               <TabsTrigger value="headings"><ListChecks className="mr-2 h-5 w-5" />Suggest Headings</TabsTrigger>
             </TabsList>
             <TabsContent value="blog">
-              <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg border-primary/20 border bg-card">
+              <Card className="hover:shadow-xl transition-shadow duration-300 border-primary/20">
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
                   <CardDescription>Craft compelling, SEO-optimized blog articles. Input your keywords, tone, and length.</CardDescription>
@@ -370,7 +402,15 @@ export function ContentGenerator() {
                         <FormItem>
                           <FormLabel>How many pictures? (0-5)</FormLabel>
                           <FormControl><Input aria-label="Number of pictures for blog post" type="number" min="0" max="5" placeholder="e.g., 2" {...field} /></FormControl>
-                          <FormDescription>AI will place images where appropriate in the content. The first image will be used as a thumbnail.</FormDescription>
+                          <FormDescription>AI will place images where appropriate. The first is the thumbnail.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                       <FormField control={blogForm.control} name="seoKeywords" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SEO Keywords (Optional)</FormLabel>
+                          <FormControl><Input aria-label="SEO keywords for optimization" placeholder="e.g., home gardening tips, best soil for vegetables" {...field} /></FormControl>
+                          <FormDescription>Comma-separated keywords to further optimize the content.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -385,10 +425,10 @@ export function ContentGenerator() {
               </Card>
             </TabsContent>
             <TabsContent value="social">
-               <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg border-primary/20 border bg-card">
+               <Card className="hover:shadow-xl transition-shadow duration-300 border-primary/20">
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center"><MessageSquare className="mr-2 h-6 w-6 text-primary" />Create Social Media Post</CardTitle>
-                  <CardDescription>Generate engaging posts for your social media platforms. Provide a topic and choose your platform.</CardDescription>
+                  <CardDescription>Generate engaging posts for your social media platforms.</CardDescription>
                 </CardHeader>
                 <Form {...socialMediaForm}>
                   <form onSubmit={socialMediaForm.handleSubmit(onSocialMediaSubmit)}>
@@ -422,6 +462,14 @@ export function ContentGenerator() {
                           <FormMessage />
                         </FormItem>
                       )} />
+                       <FormField control={socialMediaForm.control} name="seoKeywords" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SEO Keywords (Optional)</FormLabel>
+                          <FormControl><Input aria-label="SEO keywords for social media post optimization" placeholder="e.g., tech innovation, social media trends" {...field} /></FormControl>
+                          <FormDescription>Comma-separated keywords to optimize the post.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </CardContent>
                     <CardFooter>
                       <Button type="submit" disabled={isLoading && activeTab === 'social'} className="w-full text-lg py-6">
@@ -439,7 +487,7 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="shadow-lg rounded-lg border-primary/10 border bg-card sticky top-6 h-[calc(100vh-5rem)] flex flex-col">
+          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-primary/10">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
@@ -476,7 +524,7 @@ export function ContentGenerator() {
                       <img
                         src={generatedBlogPost.thumbnailUrl}
                         alt={generatedBlogPost.title || "Blog post thumbnail"}
-                        className="w-full h-auto max-h-96 object-cover rounded-lg shadow-lg border border-border"
+                        className="w-full h-auto max-h-96 object-cover rounded-lg shadow-xl border border-border"
                         data-ai-hint="blog thumbnail"
                       />
                     </figure>
