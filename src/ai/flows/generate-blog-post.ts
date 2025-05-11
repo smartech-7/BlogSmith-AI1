@@ -53,7 +53,7 @@ Title: Include the main keyword: "{{{mainKeyword}}}". Make it interesting.
 
 Introduction: Write 3-4 simple sentences that explain what the article is about. Use the main keyword "{{{mainKeyword}}}" once.
 
-Body: Use short paragraphs (3-4 lines each). Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times. Add related keywords (like those in "{{{relatedKeywords}}}") naturally. Keep the tone friendly and helpful. Use bullet points or numbered lists if appropriate for clarity. Include subheadings with keywords where relevant.
+Body: Use short paragraphs (3-4 lines each). Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times. Add related keywords (like those in "{{{relatedKeywords}}}") naturally. Keep the tone friendly and helpful. Do NOT use bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`). Include subheadings with keywords where relevant; these subheadings must be plain text, not HTML tags.
 
 Conclusion: Write 3-4 sentences that summarize the article. Encourage the reader to take action (like sharing or learning more).
 
@@ -61,12 +61,18 @@ SEO Tips to follow:
 - Use short sentences and simple vocabulary.
 - Write in an active voice.
 - Avoid fluff or complicated words.
-- Include subheadings with keywords naturally integrated.
+- Include subheadings with keywords naturally integrated (subheadings must be plain text).
 - Ensure the main keyword "{{{mainKeyword}}}" appears in the first 100 words of the article.
 
 If images are requested (number of images > 0), you MUST include exactly {{{numPictures}}} placeholders in the generated content where images would be most appropriate and contextually relevant. Use placeholders in the format "[IMAGE_PLACEHOLDER_1]", "[IMAGE_PLACEHOLDER_2]", etc., directly within the text. These placeholders will be replaced by actual images later. Ensure these placeholders are naturally integrated into the flow of the content. For example, if numPictures is 2, include "[IMAGE_PLACEHOLDER_1]" and "[IMAGE_PLACEHOLDER_2]".
 
-Important: The generated title and content must be plain text suitable for direct pasting into platforms like Google Blogger. Do not use any special characters or symbols other than standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses. Avoid any markdown formatting (e.g., no heading markers like '###', no horizontal rules like '***', no triple backticks \`\`\`). Output the entire article (Introduction, Body, Conclusion) as a single string for the 'content' field.
+Important: The generated title and content must be plain text suitable for direct pasting into platforms like Google Blogger.
+Do not use any special characters or symbols other than standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses.
+Avoid any markdown formatting (e.g., no heading markers like '###', no horizontal rules like '***', no triple backticks \`\`\`).
+Specifically, do NOT use \`**\` for bolding.
+Do NOT use HTML heading tags like \`<h1>\`, \`<h2>\`, \`<h3>\`. If you use subheadings, they must be plain text, followed by a line break if necessary.
+Do NOT use bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`).
+Output the entire article (Introduction, Body, Conclusion) as a single string for the 'content' field.
 `,
 });
 
@@ -179,3 +185,4 @@ const generateBlogPostFlow = ai.defineFlow(
     };
   }
 );
+

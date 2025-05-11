@@ -1,3 +1,4 @@
+
 // src/ai/flows/generate-social-media-post.ts
 'use server';
 /**
@@ -50,7 +51,9 @@ Ensure the post content is well-formatted for the platform. For example, for Twi
 Suggest relevant hashtags.
 
 Important: The \`postContent\` and each hashtag in the \`hashtags\` array must be plain text.
-For \`postContent\`, do not use any special characters or symbols other than standard punctuation (periods, commas, question marks, exclamation marks, apostrophes, hyphens, parentheses) and platform-specific symbols like '@' for mentions and '#' for hashtags. Avoid any markdown formatting (e.g., no '###' heading markers, no '***' horizontal rules, no triple backticks \`\`\`).
+For \`postContent\`, do not use any special characters or symbols other than standard punctuation (periods, commas, question marks, exclamation marks, apostrophes, hyphens, parentheses) and platform-specific symbols like '@' for mentions and '#' for hashtags.
+Avoid any markdown formatting (e.g., no '###' heading markers, no '***' horizontal rules, no triple backticks \`\`\`).
+Specifically, do not use \`**\` for bolding, do not use HTML tags like \`<h1>\`, \`<h2>\`, \`<h3>\`, and do not use bullet points (e.g., \`*\`, \`-\`, or numbered lists).
 For \`hashtags\`, ensure they only contain alphanumeric characters after the initial '#' symbol (e.g., "#example", "#myTag123").
 Avoid any markdown formatting in both \`postContent\` and \`hashtags\`.
 `,
@@ -87,4 +90,5 @@ const generateSocialMediaPostFlow = ai.defineFlow(
     };
   }
 );
+
 
