@@ -139,7 +139,7 @@ export function ContentGenerator() {
         if (error.message.includes('blocked') || error.message.includes('safety settings')) {
              errorMessage = "Content generation was blocked due to safety settings. Please revise your input or try a different topic.";
         } else {
-             errorMessage = `${error.message}`; // Use the detailed error message from the try block
+             errorMessage = `${error.message}`;
         }
       }
       toast({ title: "Error Generating Blog Post", description: errorMessage, variant: "destructive" });
@@ -222,22 +222,41 @@ export function ContentGenerator() {
     }
 
     setIsLoading(true);
-    document.body.style.setProperty('--background-temp', 'hsl(0 0% 100%)');
-    input.classList.add('pdf-export-bg');
+    // Temporarily set a white background for PDF export
+    const originalBg = document.body.style.backgroundColor;
+    const originalColor = input.style.color;
+    document.body.style.backgroundColor = 'white'; // Ensure body background is white
+    input.style.backgroundColor = 'white'; // Ensure content area background is white
+    input.style.color = 'black'; // Ensure text is black
 
 
     try {
+      // Ensure all images are loaded before capturing
+      const images = Array.from(input.getElementsByTagName('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = img.onerror = resolve;
+        });
+      }));
+      
       const canvas = await html2canvas(input, {
         scale: 2,
-        useCORS: true,
+        useCORS: true, // Important for external images
         logging: false,
         backgroundColor: 'white', 
+        onclone: (document) => { // Apply styles to the cloned document for rendering
+          const clonedContent = document.getElementById(input.id);
+          if(clonedContent) {
+            clonedContent.style.backgroundColor = 'white';
+            clonedContent.style.color = 'black';
+            Array.from(clonedContent.getElementsByTagName('*')).forEach((el: any) => {
+                el.style.color = 'black'; // Force all text elements to be black
+            });
+          }
+        }
       });
       
-      input.classList.remove('pdf-export-bg');
-      document.body.style.removeProperty('--background-temp');
-
-
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
@@ -248,16 +267,25 @@ export function ContentGenerator() {
       const canvasWidth = imgProps.width;
       const canvasHeight = imgProps.height;
       
-      const scaledImgHeight = (canvasHeight * pdfWidth) / canvasWidth;
+      // Calculate the height of the image in the PDF, maintaining aspect ratio
+      const ratio = canvasWidth / pdfWidth;
+      // let scaledImgHeight = canvasHeight / ratio; // Not used directly in loop
 
-      let positionOnCanvas = 0; 
+      let positionOnCanvas = 0; // Current y position on the source canvas
+      let pageCount = 0;
       
       while (positionOnCanvas < canvasHeight) {
+        pageCount++;
+        if (pageCount > 1) { 
+          pdf.addPage();
+        }
+        // Calculate how much of the canvas height can fit onto one PDF page
         const sourceChunkHeightPx = Math.min(
-          canvasHeight - positionOnCanvas, 
-          pdfHeight * (canvasWidth / pdfWidth) 
+          canvasHeight - positionOnCanvas, // Remaining height on canvas
+          pdfHeight * ratio // Max height that fits on one PDF page, scaled to canvas pixels
         );
         
+        // Create a temporary canvas for the current page's chunk
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = canvasWidth;
         tempCanvas.height = sourceChunkHeightPx;
@@ -266,13 +294,13 @@ export function ContentGenerator() {
         if (tempCtx) {
           tempCtx.fillStyle = 'white'; // Ensure background of chunk is white
           tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+          // Draw the chunk from the main canvas to the temporary canvas
           tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeightPx, 0, 0, canvasWidth, sourceChunkHeightPx);
           const pageImgData = tempCanvas.toDataURL('image/png');
 
-          if (positionOnCanvas > 0) { 
-            pdf.addPage();
-          }
-          pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, sourceChunkHeightPx * (pdfWidth / canvasWidth) );
+          // Add the image chunk to the PDF page
+          // The height of the image on the PDF page is `sourceChunkHeightPx / ratio`
+          pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, sourceChunkHeightPx / ratio );
           positionOnCanvas += sourceChunkHeightPx;
         } else {
           throw new Error("Could not create temporary canvas context for PDF generation.");
@@ -283,11 +311,13 @@ export function ContentGenerator() {
       toast({ title: "PDF Exported!", description: "Blog post exported as PDF." });
 
     } catch (error: any) {
-      input.classList.remove('pdf-export-bg');
-      document.body.style.removeProperty('--background-temp');
       console.error("Error exporting PDF:", error);
       toast({ title: "Error Exporting PDF", description: `Failed to export blog post as PDF. ${error.message}`, variant: "destructive" });
     } finally {
+      // Restore original styles
+      document.body.style.backgroundColor = originalBg;
+      input.style.backgroundColor = ''; // Revert to CSS-defined or inherited
+      input.style.color = originalColor;
       setIsLoading(false);
     }
   };
@@ -302,29 +332,31 @@ export function ContentGenerator() {
         if (imageIndex >= 0 && imageIndex < blogPost.imageUrls!.length) {
           const imageUrl = blogPost.imageUrls![imageIndex];
           const altText = blogPost.title || blogForm.getValues('mainKeyword') || `Generated blog image ${imageIndex + 1}`;
-          const finalImageUrl = imageUrl.startsWith('https://picsum.photos') ? imageUrl : imageUrl; 
+          // Ensure data URLs are used directly
+          const finalImageUrl = imageUrl.startsWith('data:image') ? imageUrl : (imageUrl.startsWith('https://picsum.photos') ? imageUrl : imageUrl); 
           return `<figure class="my-6 flex justify-center"><img src="${finalImageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
         return ''; 
       });
     } else {
+      // Remove any placeholders if no images were generated/requested
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "");
     }
     return { __html: processedContent };
   };
 
 
+  // Assign a unique ID to the blog content container for PDF export styling
+  const blogContentContainerId = 'blogContentToPrint';
+  useEffect(() => {
+    if (blogContentRef.current) {
+      blogContentRef.current.id = blogContentContainerId;
+    }
+  }, []);
+
+
   return (
     <>
-      <style jsx global>{`
-        .pdf-export-bg {
-          background-color: var(--background-temp) !important;
-          color: black !important; /* Ensure text is visible on white background */
-        }
-        .pdf-export-bg img {
-           border-color: #ccc !important; /* Lighter border for PDF */
-        }
-      `}</style>
       <section className="mb-12 text-center">
         <h2 className="text-3xl font-bold mb-4 text-foreground">Supercharge Your Content Creation</h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -487,14 +519,14 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-primary/10">
+          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-primary/10 shadow-xl">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
                 {activeTab === 'headings' ? 'Switch to Blog Post or Social Media tab to see generated content.' : 'Your AI-generated content will appear below. Review, copy, or export it.'}
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
+            <CardContent id={blogContentContainerId} ref={blogContentRef} className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4">
               {isLoading && (activeTab === 'blog' || activeTab === 'social') && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -518,7 +550,7 @@ export function ContentGenerator() {
               )}
 
               {generatedBlogPost && activeTab === "blog" && (
-                <article ref={blogContentRef} className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
+                <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
                   {generatedBlogPost.thumbnailUrl && (
                     <figure className="mb-6">
                       <img
@@ -571,3 +603,4 @@ export function ContentGenerator() {
     </>
   );
 }
+
