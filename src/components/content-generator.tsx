@@ -10,21 +10,21 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
-import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
-import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
-import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare } from 'lucide-react';
+import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post-flow';
+import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform';
+import { socialMediaPlatforms, SocialMediaPlatformSchema, type SocialMediaPlatform } from '@/ai/schemas/social-media-platform-schema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const blogFormSchema = z.object({
-  topic: z.string().min(5, { message: "Topic must be at least 5 characters." }).max(100, { message: "Topic must be at most 100 characters." }),
+  mainKeyword: z.string().min(3, { message: "Main keyword must be at least 3 characters." }).max(100, { message: "Main keyword must be at most 100 characters." }),
+  relatedKeywords: z.string().min(3, { message: "Related keywords must be at least 3 characters." }).max(200, { message: "Related keywords must be at most 200 characters." }),
   tone: z.string().min(1, { message: "Please select a tone." }),
   numPictures: z.coerce.number().int().min(0, { message: "Number of pictures must be 0 or more." }).max(5, { message: "Number of pictures can be at most 5." }),
-  wordCount: z.coerce.number().int().min(50, { message: "Word count must be at least 50." }).max(2000, { message: "Word count must be at most 2000." }),
+  wordCount: z.coerce.number().int().min(700, { message: "Word count must be at least 700." }).max(3000, { message: "Word count must be at most 3000." }),
 });
 type BlogFormData = z.infer<typeof blogFormSchema>;
 
@@ -37,6 +37,7 @@ type SocialMediaFormData = z.infer<typeof socialMediaFormSchema>;
 
 
 const toneOptions = [
+  { value: "friendly and helpful", label: "Friendly and Helpful (Recommended)" },
   { value: "formal", label: "Formal" },
   { value: "casual", label: "Casual" },
   { value: "humorous", label: "Humorous" },
@@ -49,23 +50,23 @@ const toneOptions = [
 
 const featureCards = [
   {
-    icon: <Edit3 className="h-8 w-8 text-primary mb-3" />,
-    title: "Create Good Content",
-    description: "Generate high-quality, unique articles and posts. Overcome writer's block and keep your audience engaged.",
+    icon: <Wand2 className="h-8 w-8 text-primary mb-3" />,
+    title: "Create Original Content",
+    description: "Generate unique, SEO-optimized articles. Easy for a 6th-grader to read, designed to rank well.",
   },
   {
     icon: <Search className="h-8 w-8 text-primary mb-3" />,
-    title: "Help People Discover It",
-    description: "Optimize your content for search engines. Improve visibility and attract more organic traffic.",
+    title: "SEO Optimized by Design",
+    description: "Uses your main and related keywords to craft content that search engines will love, improving visibility.",
   },
   {
     icon: <ImageIcon className="h-8 w-8 text-primary mb-3" />,
-    title: "Modern & Visual",
-    description: "Automatically add AI-generated images to make your blog content more engaging and shareable.",
+    title: "Visually Engaging",
+    description: "Automatically add AI-generated images related to your content, making your posts more appealing.",
   },
    {
     icon: <Share2 className="h-8 w-8 text-primary mb-3" />,
-    title: "Cross-Platform Ready",
+    title: "Social Media Ready",
     description: "Craft posts tailored for different social media platforms, maximizing your reach and impact online.",
   }
 ];
@@ -76,12 +77,11 @@ export function ContentGenerator() {
   const [generatedSocialMediaPost, setGeneratedSocialMediaPost] = useState<GenerateSocialMediaPostOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"blog" | "social">("blog");
-  const [seoKeywords, setSeoKeywords] = useState('');
   const { toast } = useToast();
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
-    defaultValues: { topic: '', tone: '', numPictures: 1, wordCount: 500 },
+    defaultValues: { mainKeyword: '', relatedKeywords: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700 },
   });
 
   const socialMediaForm = useForm<SocialMediaFormData>({
@@ -94,22 +94,19 @@ export function ContentGenerator() {
     setGeneratedBlogPost(null);
     setGeneratedSocialMediaPost(null); 
     try {
-      let blogPostResult = await generateBlogPost(data);
-      if (seoKeywords.trim()) {
-        toast({ title: "Optimizing Blog for SEO...", description: "Applying SEO keywords to your blog content." });
-        const seoResult = await optimizeForSeo({ content: blogPostResult.content, keywords: seoKeywords });
-        blogPostResult = { ...blogPostResult, content: seoResult.optimizedContent };
-      }
+      const blogPostResult = await generateBlogPost(data);
       setGeneratedBlogPost(blogPostResult);
       toast({ title: "Blog Post Generated!", description: "Your blog post has been successfully generated." });
     } catch (error) {
       console.error("Error generating blog post:", error);
       let errorMessage = "Failed to generate blog post. Please try again.";
       if (error instanceof Error && error.message) {
-        // Check if the error message indicates a specific Genkit/Gemini issue like blocked content
         if (error.message.includes('blocked') || error.message.includes('safety settings')) {
              errorMessage = "Content generation was blocked due to safety settings. Please revise your input or try a different topic.";
-        } else {
+        } else if (error.message.includes('Failed to generate blog post title or content')) {
+            errorMessage = "The AI failed to generate the blog post content as expected. This might be due to the complexity of the request or an internal issue. Please try simplifying your keywords or topic, or try again later.";
+        }
+         else {
              errorMessage = `Failed to generate blog post: ${error.message}. Please try again.`;
         }
       }
@@ -174,18 +171,22 @@ export function ContentGenerator() {
   };
 
   const renderBlogContent = (blogPost: GenerateBlogPostOutput) => {
-    let processedContent = blogPost.content.replace(/\n/g, '<br />');
+    let processedContent = blogPost.content.replace(/\n\n+/g, '<br /><br />').replace(/\n/g, '<br />');
+
 
     if (blogPost.imageUrls && blogPost.imageUrls.length > 0) {
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, (match, p1) => {
         const imageIndex = parseInt(p1, 10) - 1;
         if (blogPost.imageUrls && imageIndex >= 0 && imageIndex < blogPost.imageUrls.length) {
           const imageUrl = blogPost.imageUrls[imageIndex];
-          return `<figure class="my-6 flex justify-center"><img src="${imageUrl}" alt="${blogPost.title || "Generated blog image"} ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
+          // Use mainKeyword for alt text if title is not available, or a generic fallback
+          const altText = blogPost.title || blogForm.getValues('mainKeyword') || "Generated blog image";
+          return `<figure class="my-6 flex justify-center"><img src="${imageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
         return ''; 
       });
     } else {
+      // Remove placeholders if no images were generated or requested for them
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "");
     }
     return { __html: processedContent };
@@ -197,18 +198,18 @@ export function ContentGenerator() {
       <section className="mb-12 text-center">
         <h2 className="text-3xl font-bold mb-4 text-foreground">Supercharge Your Content Creation</h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          BlogSmith AI helps you effortlessly generate high-quality blog posts, social media updates, optimize for SEO, and enhance with visuals.
+          BlogSmith AI helps you effortlessly generate SEO-friendly blog posts, social media updates, and enhance them with AI-generated visuals.
         </p>
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {featureCards.map((feature, index) => (
-          <Card key={index} className="shadow-lg rounded-lg hover:shadow-xl transition-shadow duration-300 bg-card">
+          <Card key={index} className="shadow-lg rounded-lg hover:shadow-xl transition-shadow duration-300 bg-card flex flex-col">
             <CardHeader className="items-center">
               {feature.icon}
               <CardTitle className="text-xl text-center">{feature.title}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow">
               <p className="text-sm text-muted-foreground text-center">{feature.description}</p>
             </CardContent>
           </Card>
@@ -226,15 +227,24 @@ export function ContentGenerator() {
               <Card className="shadow-xl rounded-lg border-primary/20 border bg-card">
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
-                  <CardDescription>Craft compelling blog articles. Input your topic, tone, and length. Optionally add SEO keywords.</CardDescription>
+                  <CardDescription>Craft compelling, SEO-optimized blog articles. Input your keywords, tone, and length.</CardDescription>
                 </CardHeader>
                 <Form {...blogForm}>
                   <form onSubmit={blogForm.handleSubmit(onBlogSubmit)}>
                     <CardContent className="space-y-6">
-                      <FormField control={blogForm.control} name="topic" render={({ field }) => (
+                      <FormField control={blogForm.control} name="mainKeyword" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Topic</FormLabel>
-                          <FormControl><Input aria-label="Blog post topic" placeholder="e.g., The Future of Renewable Energy" {...field} /></FormControl>
+                          <FormLabel>Main Keyword</FormLabel>
+                          <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} /></FormControl>
+                          <FormDescription>The primary keyword for your article.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                       <FormField control={blogForm.control} name="relatedKeywords" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Related Keywords (comma-separated)</FormLabel>
+                          <FormControl><Input aria-label="Blog post related keywords" placeholder="e.g., organic soil, companion planting, water conservation" {...field} /></FormControl>
+                          <FormDescription>2-3 keywords related to your main topic.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -245,13 +255,15 @@ export function ContentGenerator() {
                             <FormControl><SelectTrigger aria-label="Select blog post tone"><SelectValue placeholder="Select a tone" /></SelectTrigger></FormControl>
                             <SelectContent>{toneOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                           </Select>
+                           <FormDescription>The AI aims for "friendly and helpful" by default.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={blogForm.control} name="wordCount" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>How long should it be? (Words 50-2000)</FormLabel>
-                          <FormControl><Input aria-label="Blog post word count" type="number" min="50" max="2000" placeholder="e.g., 500" {...field} /></FormControl>
+                          <FormLabel>How long should it be? (Words 700-3000)</FormLabel>
+                          <FormControl><Input aria-label="Blog post word count" type="number" min="700" max="3000" placeholder="e.g., 700" {...field} /></FormControl>
+                          <FormDescription>Minimum 700 words for better SEO.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -263,11 +275,6 @@ export function ContentGenerator() {
                           <FormMessage />
                         </FormItem>
                       )} />
-                      <FormItem>
-                        <FormLabel>SEO Keywords (optional, comma-separated)</FormLabel>
-                        <FormControl><Input aria-label="SEO keywords for blog post" placeholder="e.g., sustainable gardening, organic soil" value={seoKeywords} onChange={(e) => setSeoKeywords(e.target.value)} /></FormControl>
-                        <FormDescription>Enter keywords to optimize the blog post for search engines.</FormDescription>
-                      </FormItem>
                     </CardContent>
                     <CardFooter>
                       <Button type="submit" disabled={isLoading} className="w-full text-lg py-6">
@@ -330,14 +337,14 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="shadow-xl rounded-lg border-primary/10 border bg-card sticky top-6 h-[calc(100vh-8rem)] md:h-auto flex flex-col">
+          <Card className="shadow-xl rounded-lg border-primary/10 border bg-card sticky top-6 max-h-[calc(100vh-5rem)] h-auto flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription>
                 Your AI-generated content will appear below. Review, copy, or export it.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4 min-h-[400px] md:min-h-[calc(100vh-15rem)]">
+            <CardContent className="flex-grow overflow-y-auto p-6 bg-muted/30 rounded-b-md space-y-4 min-h-[300px] md:min-h-[400px] lg:min-h-0">
               {isLoading && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10">
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -392,6 +399,3 @@ export function ContentGenerator() {
     </>
   );
 }
-
-
-    
