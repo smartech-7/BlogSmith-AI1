@@ -10,10 +10,11 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z}from 'genkit';
 
 const GenerateBlogPostInputSchema = z.object({
   mainKeyword: z.string().min(3, { message: "Main keyword must be at least 3 characters." }).max(100, { message: "Main keyword must be at most 100 characters." }).describe('The main keyword for the blog post.'),
+  userProvidedTitle: z.string().optional().describe('An optional user-provided title. If provided, use this title for the blog post. Otherwise, a title will be generated.'),
   tone: z.string().describe('The desired tone. The core prompt emphasizes "friendly and helpful".'),
   numPictures: z.coerce.number().int().min(0).max(5).describe('The number of pictures to generate for the blog post (0-5).'),
   wordCount: z.coerce.number().int().min(700).max(3000).describe('The desired approximate word count (minimum 700 words).'),
@@ -45,14 +46,23 @@ The total word count of the 'content' field (including intro, body, conclusion) 
 Main Keyword for the article: "{{{mainKeyword}}}"
 Desired Tone: "{{{tone}}}" (The overall approach should be friendly and helpful)
 Number of images requested: {{{numPictures}}}
+{{#if userProvidedTitle}}
+User-Provided Title: "{{{userProvidedTitle}}}"
+{{/if}}
 
 Your output MUST be a JSON object with two fields: "title" and "content".
 
+{{#if userProvidedTitle}}
 Instructions for the "title" field (JSON string):
-- This field should contain the main title of the blog post as PLAIN TEXT.
+- This field MUST contain the exact user-provided title: "{{{userProvidedTitle}}}".
+- Ensure it is PLAIN TEXT. Do NOT use any HTML tags, markdown syntax (like '#'), or any bolding (like '**') in this "title" field.
+{{else}}
+Instructions for the "title" field (JSON string):
+- This field should contain the main title of the blog post as PLAIN TEXT, generated based on the main keyword: "{{{mainKeyword}}}".
 - The title must include the main keyword: "{{{mainKeyword}}}".
 - Make it interesting, clear, and concise.
 - Do NOT use any HTML tags, markdown syntax (like '#'), or any bolding (like '**') in this "title" field.
+{{/if}}
 
 Instructions for the "content" field (JSON string):
 The "content" field should be a single string containing the full article, structured as follows, STARTING DIRECTLY WITH THE INTRODUCTION:
@@ -125,6 +135,7 @@ const generateBlogPostFlow = ai.defineFlow(
   async (input: GenerateBlogPostInput) => {
     const {output: blogContentOutput} = await blogPostPrompt({
       mainKeyword: input.mainKeyword,
+      userProvidedTitle: input.userProvidedTitle,
       tone: input.tone,
       wordCount: input.wordCount,
       numPictures: input.numPictures,

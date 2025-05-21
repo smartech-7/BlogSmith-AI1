@@ -10,9 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
+import { generateBlogTitle } from '@/ai/flows/generate-blog-title'; // New import
 import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
 import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
-import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer } from 'lucide-react';
+import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer, Heading1 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,6 +26,7 @@ import html2canvas from 'html2canvas';
 
 const blogFormSchema = z.object({
   mainKeyword: z.string().min(3, { message: "Main keyword must be at least 3 characters." }).max(100, { message: "Main keyword must be at most 100 characters." }),
+  title: z.string().optional(),
   tone: z.string().min(1, { message: "Please select a tone." }),
   numPictures: z.coerce.number().int().min(0, { message: "Number of pictures must be 0 or more." }).max(5, { message: "Number of pictures can be at most 5." }),
   wordCount: z.coerce.number().int().min(700, { message: "Word count must be at least 700." }).max(3000, { message: "Word count must be at most 3000." }),
@@ -81,13 +83,14 @@ export function ContentGenerator() {
   const [generatedBlogPost, setGeneratedBlogPost] = useState<GenerateBlogPostOutput | null>(null);
   const [generatedSocialMediaPost, setGeneratedSocialMediaPost] = useState<GenerateSocialMediaPostOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuggestingTitle, setIsSuggestingTitle] = useState(false);
   const [activeTab, setActiveTab] = useState<"blog" | "social" | "headings">("blog");
   const { toast } = useToast();
   const blogContentRef = useRef<HTMLDivElement>(null); 
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
-    defaultValues: { mainKeyword: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700, seoKeywords: '' },
+    defaultValues: { mainKeyword: '', title: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700, seoKeywords: '' },
   });
 
   const socialMediaForm = useForm<SocialMediaFormData>({
@@ -102,6 +105,37 @@ export function ContentGenerator() {
     }
   }, [activeTab]);
 
+  const handleSuggestTitle = async () => {
+    const mainKeyword = blogForm.getValues('mainKeyword');
+    if (!mainKeyword || mainKeyword.trim().length < 3) {
+      toast({
+        title: "Keyword Required",
+        description: "Please enter a main keyword (at least 3 characters) to suggest a title.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSuggestingTitle(true);
+    try {
+      const result = await generateBlogTitle({ mainKeyword });
+      blogForm.setValue('title', result.title, { shouldValidate: true });
+      toast({
+        title: "Title Suggested!",
+        description: "A title has been suggested based on your keyword.",
+      });
+    } catch (error: any) {
+      console.error("Error suggesting title:", error);
+      toast({
+        title: "Error Suggesting Title",
+        description: error.message || "Failed to suggest a title. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSuggestingTitle(false);
+    }
+  };
+
+
  const onBlogSubmit = async (data: BlogFormData) => {
     setIsLoading(true);
     setGeneratedBlogPost(null);
@@ -109,6 +143,7 @@ export function ContentGenerator() {
     try {
       let blogPostResult = await generateBlogPost({
         mainKeyword: data.mainKeyword,
+        userProvidedTitle: data.title,
         tone: data.tone,
         numPictures: data.numPictures,
         wordCount: data.wordCount,
@@ -422,8 +457,22 @@ export function ContentGenerator() {
                       <FormField control={blogForm.control} name="mainKeyword" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">Main Keyword</FormLabel>
-                          <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
-                          <FormDescription className="text-xs text-muted-foreground">The primary keyword for your article.</FormDescription>
+                           <div className="flex items-center space-x-2">
+                            <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} className="bg-input shadow-inset focus:ring-primary flex-grow" /></FormControl>
+                            <Button type="button" variant="outline" size="sm" onClick={handleSuggestTitle} disabled={isSuggestingTitle} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
+                              {isSuggestingTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heading1 className="h-4 w-4" />}
+                              <span className="ml-2 hidden sm:inline">Suggest Title</span>
+                            </Button>
+                          </div>
+                          <FormDescription className="text-xs text-muted-foreground">The primary keyword for your article. Use it to suggest a title.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                       <FormField control={blogForm.control} name="title" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-medium text-foreground">Blog Title (Optional)</FormLabel>
+                          <FormControl><Input aria-label="Blog post title" placeholder="e.g., Top 10 Sustainable Gardening Tips for Beginners" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormDescription className="text-xs text-muted-foreground">Enter your own title or use the suggestion. If blank, AI will generate one.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -464,7 +513,7 @@ export function ContentGenerator() {
                       )} />
                     </CardContent>
                     <CardFooter className="pt-6">
-                      <Button type="submit" disabled={isLoading && activeTab === 'blog'} className="w-full text-lg py-6 shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
+                      <Button type="submit" disabled={(isLoading && activeTab === 'blog') || isSuggestingTitle} className="w-full text-lg py-6 shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                         {isLoading && activeTab === 'blog' ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Generating Blog...</> : <><Sparkles className="mr-2 h-5 w-5" />Generate Blog Post</>}
                       </Button>
                     </CardFooter>
@@ -619,4 +668,3 @@ export function ContentGenerator() {
     </>
   );
 }
-
