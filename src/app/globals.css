@@ -5,37 +5,37 @@
 
 @layer base {
   :root {
-    /* Light Theme - Serene Grove */
-    --background: 120 20% 97%; /* Very light, soft minty green */
-    --foreground: 120 25% 18%; /* Dark, desaturated forest green */
+    /* Light Theme - Professional Teal */
+    --background: 220 30% 97%; /* Very light, slightly bluish gray */
+    --foreground: 220 20% 20%; /* Very dark, slightly bluish gray - for text */
     
-    --muted: 120 15% 90%; /* Lighter minty gray */
-    --muted-foreground: 120 10% 40%; /* Medium muted forest green */
+    --muted: 220 25% 92%; /* Lighter bluish gray */
+    --muted-foreground: 220 15% 45%; /* Medium muted bluish gray */
 
     --popover: 0 0% 100%; /* White */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 0 0% 100%; /* White, slightly offset from bg */
+    --card: 0 0% 100%; /* White */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 120 10% 85%; /* Soft minty gray border */
-    --input: 120 15% 95%; /* Very light minty input background */
+    --border: 220 20% 88%; /* Soft bluish gray Border */
+    --input: 220 25% 95%; /* Very light bluish gray Input Background */
 
     /* Primary, Accent & Secondary Colors */
-    --primary: 140 55% 48%; /* Rich, vibrant green */
+    --primary: 180 100% 25%; /* Teal (#008080) */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 200 60% 55%; /* Calm, sky blue */
-    --secondary-foreground: 200 20% 98%; /* Very light blue/white */
+    --secondary: 210 70% 58%; /* Soft Professional Blue */
+    --secondary-foreground: 0 0% 100%; /* White */
 
-    --accent: 45 80% 60%; /* Warm, earthy yellow/gold */
-    --accent-foreground: 45 30% 15%; /* Dark brown/black for contrast on accent */
+    --accent: 180 80% 35%; /* A slightly lighter/brighter Teal */
+    --accent-foreground: 0 0% 100%; /* White */
     
     --destructive: 0 75% 55%; /* Clear Red */
     --destructive-foreground: 0 0% 100%; /* White */
 
-    --ring: 140 50% 55%; /* Slightly lighter primary green for focus */
-    --radius: 0.75rem; /* Increased rounded corners */
+    --ring: 180 100% 30%; /* Teal for focus rings */
+    --radius: 0.5rem; /* Standard rounded corners */
 
     /* Shadow Definitions - Kept existing, they are quite neutral */
     --shadow-color-rgb: 34, 41, 47; 
@@ -51,43 +51,43 @@
     --shadow-button-hover: 0 2px 4px -1px rgb(var(--shadow-color-rgb) / 0.09), 0 1px 2px -2px rgb(var(--shadow-color-rgb) / 0.07);
 
     /* Chart colors */
-    --chart-1: hsl(var(--primary)); 
-    --chart-2: hsl(var(--secondary)); 
-    --chart-3: hsl(var(--accent)); 
-    --chart-4: 30 70% 55%;  /* Soft orange/peach */
-    --chart-5: 270 60% 65%; /* Lavender */
+    --chart-1: hsl(var(--primary)); /* Teal */
+    --chart-2: hsl(var(--secondary)); /* Blue */
+    --chart-3: hsl(var(--accent)); /* Lighter Teal */
+    --chart-4: 200 70% 50%;  /* A different shade of Blue */
+    --chart-5: 220 15% 60%; /* Mid-Light Gray */
   }
 
   .dark {
-    /* Dark Theme - Midnight Grove */
-    --background: 120 15% 10%; /* Very dark forest green */
-    --foreground: 120 20% 92%; /* Light, soft minty green */
+    /* Dark Theme - Professional Teal Dark */
+    --background: 220 15% 10%; /* Very dark, slightly bluish gray */
+    --foreground: 220 20% 90%; /* Light, slightly bluish gray - for text */
     
-    --muted: 120 10% 18%; /* Darker muted forest green */
-    --muted-foreground: 120 15% 65%; /* Lighter muted foreground */
+    --muted: 220 12% 18%; /* Darker muted bluish gray */
+    --muted-foreground: 220 10% 65%; /* Lighter muted bluish gray */
 
-    --popover: 120 10% 7%; /* Very dark popover background */
+    --popover: 220 10% 7%; /* Very dark popover background */
     --popover-foreground: hsl(var(--foreground));
 
-    --card: 120 10% 9%; /* Very dark card background */
+    --card: 220 10% 9%; /* Very dark card background */
     --card-foreground: hsl(var(--foreground));
 
-    --border: 120 10% 20%; /* Darker border */
-    --input: 120 10% 14%; /* Dark input background */
+    --border: 220 10% 20%; /* Darker bluish gray border */
+    --input: 220 10% 14%; /* Dark bluish gray input background */
 
-    --primary: 140 50% 60%; /* Brighter green for dark mode */
+    --primary: 180 70% 45%; /* Brighter Teal for dark mode */
     --primary-foreground: 0 0% 100%; 
 
-    --secondary: 200 55% 65%; /* Brighter sky blue for dark mode */
-    --secondary-foreground: 200 20% 98%; 
+    --secondary: 210 60% 65%; /* Brighter Soft Blue for dark mode */
+    --secondary-foreground: 0 0% 100%; 
 
-    --accent: 45 75% 65%; /* Brighter earthy yellow/gold for dark mode */
-    --accent-foreground: 45 30% 15%; 
+    --accent: 180 60% 55%; /* Even brighter Teal for accent/hovers in dark mode */
+    --accent-foreground: 0 0% 100%; 
     
     --destructive: 0 70% 60%; /* Adjusted red for dark mode */
     --destructive-foreground: 0 0% 100%;
 
-    --ring: 140 45% 70%; /* Lighter primary green for focus rings */
+    --ring: 180 70% 50%; /* Bright Teal for focus rings */
     
     /* Darker, more pronounced shadows for dark mode - Kept existing */
     --shadow-color-rgb: 0, 0, 0; 
@@ -102,8 +102,12 @@
     --shadow-button: 0 2px 3px 0 rgb(var(--shadow-color-rgb) / 0.1), 0 1px 2px -1px rgb(var(--shadow-color-rgb) / 0.08);
     --shadow-button-hover: 0 4px 6px -1px rgb(var(--shadow-color-rgb) / 0.12), 0 2px 4px -2px rgb(var(--shadow-color-rgb) / 0.12);
 
-    /* Chart colors - ensure they are defined for dark mode if needed, or they'll inherit from light. */
-    /* Chart colors for dark could be adjusted if needed, but using the same ones is fine. */
+    /* Chart colors for dark mode */
+    --chart-1: hsl(var(--primary)); 
+    --chart-2: hsl(var(--secondary)); 
+    --chart-3: hsl(var(--accent)); 
+    --chart-4: 200 60% 60%; /* Adjusted for dark */
+    --chart-5: 220 10% 40%; /* Adjusted for dark */
   }
 }
 
@@ -115,4 +119,3 @@
     @apply bg-background text-foreground;
   }
 }
-
