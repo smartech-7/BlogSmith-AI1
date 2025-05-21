@@ -30,9 +30,17 @@ const titleGenerationPrompt = ai.definePrompt({
   name: 'titleGenerationPrompt',
   input: {schema: GenerateBlogTitleInputSchema},
   output: {schema: GenerateBlogTitleOutputSchema},
-  prompt: `You are an expert SEO copywriter. Generate one catchy, engaging, and SEO-friendly blog post title based on the provided main keyword.
-The title must include the main keyword: "{{{mainKeyword}}}".
-Make it interesting, clear, and concise.
+  prompt: `You are an expert SEO copywriter specializing in creating blog post titles that rank well on Google.
+Generate one highly SEO-optimized, catchy, and engaging blog post title based on the provided main keyword.
+
+The title MUST:
+1.  Include the main keyword: "{{{mainKeyword}}}".
+2.  Be highly relevant to the main keyword.
+3.  Be clear, specific, and accurately reflect potential content.
+4.  Be written to entice clicks (high Click-Through Rate potential).
+5.  Be concise and impactful. Aim for a length that is generally effective for search engine display.
+6.  Place the main keyword "{{{mainKeyword}}}" prominently, ideally towards the beginning of the title if it sounds natural.
+
 The title should be PLAIN TEXT. Do NOT use any HTML tags, markdown syntax (like '#'), or any bolding (like '**').
 Output only the title itself as a string within the 'title' field of the JSON response.
 
@@ -54,3 +62,4 @@ const generateBlogTitleFlow = ai.defineFlow(
     return output;
   }
 );
+
