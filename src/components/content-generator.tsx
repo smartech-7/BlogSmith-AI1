@@ -26,7 +26,7 @@ import html2canvas from 'html2canvas';
 
 const blogFormSchema = z.object({
   mainKeyword: z.string().min(3, { message: "Main keyword must be at least 3 characters." }).max(100, { message: "Main keyword must be at most 100 characters." }),
-  title: z.string().optional(),
+  userProvidedTitle: z.string().optional(),
   tone: z.string().min(1, { message: "Please select a tone." }),
   numPictures: z.coerce.number().int().min(0, { message: "Number of pictures must be 0 or more." }).max(5, { message: "Number of pictures can be at most 5." }),
   wordCount: z.coerce.number().int().min(700, { message: "Word count must be at least 700." }).max(3000, { message: "Word count must be at most 3000." }),
@@ -90,7 +90,7 @@ export function ContentGenerator() {
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
-    defaultValues: { mainKeyword: '', title: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700, seoKeywords: '' },
+    defaultValues: { mainKeyword: '', userProvidedTitle: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700, seoKeywords: '' },
   });
 
   const socialMediaForm = useForm<SocialMediaFormData>({
@@ -118,7 +118,7 @@ export function ContentGenerator() {
     setIsSuggestingTitle(true);
     try {
       const result = await generateBlogTitle({ mainKeyword });
-      blogForm.setValue('title', result.title, { shouldValidate: true });
+      blogForm.setValue('userProvidedTitle', result.title, { shouldValidate: true });
       toast({
         title: "Title Suggested!",
         description: "A title has been suggested based on your keyword.",
@@ -143,7 +143,7 @@ export function ContentGenerator() {
     try {
       let blogPostResult = await generateBlogPost({
         mainKeyword: data.mainKeyword,
-        userProvidedTitle: data.title,
+        userProvidedTitle: data.userProvidedTitle,
         tone: data.tone,
         numPictures: data.numPictures,
         wordCount: data.wordCount,
@@ -224,30 +224,33 @@ export function ContentGenerator() {
   };
 
 
-  const handleCopy = (text: string | undefined) => {
-    if (text) {
-      // Convert **bold** to plain text for copying, and remove images.
-      let textToCopy = text.replace(/\*\*(.*?)\*\*/g, '$1'); 
-      textToCopy = textToCopy.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
-      
-      const tempEl = document.createElement('div');
-      tempEl.innerHTML = textToCopy; // Use innerHTML to decode any HTML entities if present
-      navigator.clipboard.writeText(tempEl.textContent || tempEl.innerText || "");
+  const handleCopy = (textToCopy: string | undefined, isHtmlContent = false) => {
+    if (textToCopy) {
+      let plainText = textToCopy;
+      if (isHtmlContent) {
+        const tempEl = document.createElement('div');
+        // Replace <br> and <br /> with newlines for plain text copy
+        tempEl.innerHTML = textToCopy.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
+        plainText = tempEl.textContent || tempEl.innerText || "";
+      }
+      // Remove markdown bold for plain text copy
+      plainText = plainText.replace(/\*\*(.*?)\*\*/g, '$1');
+      navigator.clipboard.writeText(plainText);
       toast({ title: "Copied!", description: "Text content copied to clipboard." });
     }
   };
   
-  const handleExport = (title: string | undefined, content: string | undefined, type: "Blog Post" | "Social Media Post") => {
+  const handleExport = (title: string | undefined, content: string | undefined, type: "Blog Post" | "Social Media Post", isHtmlContent = false) => {
      if (content) {
-      // Convert **bold** to plain text for export, and remove images.
-      let textContentToExport = content.replace(/\*\*(.*?)\*\*/g, '$1');
-      textContentToExport = textContentToExport.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
-
-      const tempEl = document.createElement('div');
-      tempEl.innerHTML = textContentToExport;
-      const plainTextContent = tempEl.textContent || tempEl.innerText || "";
+      let textContentToExport = content;
+      if (isHtmlContent) {
+        const tempEl = document.createElement('div');
+        tempEl.innerHTML = content.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
+        textContentToExport = tempEl.textContent || tempEl.innerText || "";
+      }
+      textContentToExport = textContentToExport.replace(/\*\*(.*?)\*\*/g, '$1'); // Remove markdown bold
       
-      const textToExport = type === "Blog Post" && title ? `Title: ${title}\n\n${plainTextContent}` : plainTextContent;
+      const textToExport = type === "Blog Post" && title ? `Title: ${title}\n\n${textContentToExport}` : textContentToExport;
       
       const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
       const link = document.createElement('a');
@@ -271,6 +274,10 @@ export function ContentGenerator() {
     
     const originalBg = document.body.style.backgroundColor;
     const originalColor = input.style.color;
+
+    // Temporarily set a white background for PDF generation for light theme
+    // For dark theme, one might choose to keep dark or convert to light for printing
+    const isDarkTheme = document.documentElement.classList.contains('dark');
     document.body.style.backgroundColor = 'white'; 
     input.style.backgroundColor = 'white';
     input.style.color = 'black'; 
@@ -280,35 +287,39 @@ export function ContentGenerator() {
       const images = Array.from(input.getElementsByTagName('img'));
       await Promise.all(images.map(img => {
         if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+        // For data URIs, ensure they are fully loaded
         if (img.src.startsWith('data:')) {
             return new Promise((resolve, reject) => {
                 const image = new Image();
                 image.onload = resolve;
                 image.onerror = () => {
                     console.warn("Image (data URI) failed to load for PDF export:", img.alt);
-                    resolve(null); 
+                    resolve(null); // Resolve anyway to not block PDF generation
                 };
                 image.src = img.src;
             });
         }
+        // For external images, they might be restricted by CORS if not handled
         return new Promise(resolve => {
           img.onload = img.onerror = () => {
             if(img.naturalHeight === 0) console.warn("Image failed to load for PDF export or has zero height:", img.src, img.alt);
-            resolve(null); 
+            resolve(null); // Resolve anyway
           };
         });
       }));
       
       const canvas = await html2canvas(input, {
         scale: 2,
-        useCORS: true, 
+        useCORS: true, // Important for external images if any
         logging: false,
-        backgroundColor: '#ffffff', 
+        backgroundColor: '#ffffff', // Ensure canvas background is white
         onclone: (document) => { 
+          // This runs on the cloned document before rendering to canvas
           const clonedContent = document.getElementById(input.id);
           if(clonedContent) {
-            clonedContent.style.backgroundColor = 'white';
-            clonedContent.style.color = 'black';
+            clonedContent.style.backgroundColor = 'white'; // Ensure cloned background is white
+            clonedContent.style.color = 'black'; // Ensure cloned text is black
+            // Apply styles to all elements within the cloned content for PDF
             Array.from(clonedContent.getElementsByTagName('*')).forEach((el: any) => {
                 // Reset color for all elements to ensure black text on white PDF
                 if (el.style) el.style.color = 'black';
@@ -321,38 +332,43 @@ export function ContentGenerator() {
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth() - 20; 
-      const pdfHeight = pdf.internal.pageSize.getHeight() - 20; 
+      const pdfWidth = pdf.internal.pageSize.getWidth() - 20; // A4 width in mm, with margin
+      const pdfHeight = pdf.internal.pageSize.getHeight() - 20; // A4 height in mm, with margin
 
       const canvasWidth = imgProps.width;
       const canvasHeight = imgProps.height;
       
+      // Calculate ratio to fit width
       const ratio = canvasWidth / pdfWidth;
       
-      let positionOnCanvas = 0; 
+      let positionOnCanvas = 0; // Y-position on the source canvas
       let pageCount = 0;
       
       while (positionOnCanvas < canvasHeight) {
         pageCount++;
-        if (pageCount > 1) { 
+        if (pageCount > 1) { // Add new page for content that doesn't fit
           pdf.addPage();
         }
+        // Calculate the height of the chunk to draw on the current PDF page
         const sourceChunkHeightPx = Math.min(
-          canvasHeight - positionOnCanvas, 
-          pdfHeight * ratio 
+          canvasHeight - positionOnCanvas, // Remaining canvas height
+          pdfHeight * ratio // Max height that fits on one PDF page (scaled)
         );
         
+        // Create a temporary canvas to draw the current chunk
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = canvasWidth;
         tempCanvas.height = sourceChunkHeightPx;
         const tempCtx = tempCanvas.getContext('2d');
         
         if (tempCtx) {
-          tempCtx.fillStyle = 'white'; 
+          tempCtx.fillStyle = 'white'; // Ensure background of chunk is white
           tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
           tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeightPx, 0, 0, canvasWidth, sourceChunkHeightPx);
           const pageImgData = tempCanvas.toDataURL('image/png');
 
+          // Add the chunk to the PDF
+          // The height on PDF is sourceChunkHeightPx / ratio
           pdf.addImage(pageImgData, 'PNG', 10, 10, pdfWidth, sourceChunkHeightPx / ratio ); 
           positionOnCanvas += sourceChunkHeightPx;
         } else {
@@ -367,10 +383,11 @@ export function ContentGenerator() {
       console.error("Error exporting PDF:", error);
       toast({ title: "Error Exporting PDF", description: `Failed to export blog post as PDF. ${error.message}`, variant: "destructive" });
     } finally {
+      // Restore original styles
       document.body.style.backgroundColor = originalBg;
       if(input) {
-        input.style.backgroundColor = ''; 
-        input.style.color = originalColor;
+        input.style.backgroundColor = ''; // Reset to inherit
+        input.style.color = originalColor; // Reset to inherit
       }
       setIsLoading(false);
     }
@@ -380,11 +397,13 @@ export function ContentGenerator() {
     let processedContent = blogPost.content;
 
     // Convert markdown bold **text** to <strong>text</strong>
+    // This will bolden subheadings if AI returns them in markdown bold
     processedContent = processedContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
-    // Convert newlines to <br /> tags
+    // Convert newlines to <br /> tags for HTML display
     processedContent = processedContent.replace(/\n\n+/g, '<br /><br />').replace(/\n/g, '<br />');
 
+    // Handle image placeholders
     if (blogPost.imageUrls && blogPost.imageUrls.length > 0) {
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, (match, p1) => {
         const imageIndex = parseInt(p1, 10) - 1;
@@ -396,6 +415,7 @@ export function ContentGenerator() {
           const finalImageUrl = imageUrl.startsWith('data:image') || imageUrl.startsWith('http') ? imageUrl : `https://placehold.co/600x400.png`; 
           return `<figure class="my-6 flex justify-center"><img src="${finalImageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
+        // If placeholder exists but no matching image URL, remove placeholder
         return ''; 
       });
     } else {
@@ -405,13 +425,20 @@ export function ContentGenerator() {
     return { __html: processedContent };
   };
 
+  const renderSocialMediaPostContent = (post: GenerateSocialMediaPostOutput) => {
+    let processedContent = post.postContent;
+    processedContent = processedContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    processedContent = processedContent.replace(/\n/g, '<br />');
+    return { __html: processedContent };
+  };
 
   const blogContentContainerId = 'blogContentToPrint';
   useEffect(() => {
+    // Assign ID to the ref'd div for html2canvas if it exists
     if (blogContentRef.current) {
       blogContentRef.current.id = blogContentContainerId;
     }
-  }, []);
+  }, []); // Empty dependency array ensures this runs once on mount
 
 
   return (
@@ -446,7 +473,7 @@ export function ContentGenerator() {
               <TabsTrigger value="headings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-5 w-5" />Suggest Headings</TabsTrigger>
             </TabsList>
             <TabsContent value="blog">
-              <Card className="shadow-xl transition-shadow duration-300 border border-border bg-card">
+              <Card className="transition-shadow duration-300 border border-border bg-card hover:shadow-xl">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl flex items-center font-semibold"><Sparkles className="mr-2 h-6 w-6 text-primary" />Create Your Blog Post</CardTitle>
                   <CardDescription className="text-muted-foreground">Craft compelling, SEO-optimized blog articles. Input your keywords, tone, and length.</CardDescription>
@@ -468,7 +495,7 @@ export function ContentGenerator() {
                           <FormMessage />
                         </FormItem>
                       )} />
-                       <FormField control={blogForm.control} name="title" render={({ field }) => (
+                       <FormField control={blogForm.control} name="userProvidedTitle" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">Blog Title (Optional)</FormLabel>
                           <FormControl><Input aria-label="Blog post title" placeholder="e.g., Top 10 Sustainable Gardening Tips for Beginners" {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
@@ -522,7 +549,7 @@ export function ContentGenerator() {
               </Card>
             </TabsContent>
             <TabsContent value="social">
-               <Card className="shadow-xl transition-shadow duration-300 border border-border bg-card">
+               <Card className="transition-shadow duration-300 border border-border bg-card hover:shadow-xl">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl flex items-center font-semibold"><MessageSquare className="mr-2 h-6 w-6 text-primary" />Create Social Media Post</CardTitle>
                   <CardDescription className="text-muted-foreground">Generate engaging posts for your social media platforms.</CardDescription>
@@ -584,7 +611,7 @@ export function ContentGenerator() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-border/70 shadow-xl bg-card">
+          <Card className="sticky top-6 h-[calc(100vh-5rem)] flex flex-col border-border/70 bg-card">
             <CardHeader className="pb-3 border-b border-border/50">
               <CardTitle className="text-2xl flex items-center font-semibold"><CalendarDays className="mr-2 h-6 w-6 text-primary" />Generated Content</CardTitle>
               <CardDescription className="text-muted-foreground text-sm">
@@ -634,7 +661,7 @@ export function ContentGenerator() {
               {generatedSocialMediaPost && activeTab === "social" && (
                  <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
                   <h3 className="text-xl font-bold mb-2 border-b border-border/50 pb-2 text-foreground">{socialMediaForm.getValues('platform')} Post</h3>
-                   <div dangerouslySetInnerHTML={{ __html: generatedSocialMediaPost.postContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} className="text-foreground leading-relaxed"/>
+                   <div dangerouslySetInnerHTML={renderSocialMediaPostContent(generatedSocialMediaPost)} className="text-foreground leading-relaxed"/>
                    {generatedSocialMediaPost.hashtags && generatedSocialMediaPost.hashtags.length > 0 && (
                      <p className="mt-4 text-sm text-primary">
                        <strong>Hashtags:</strong> {generatedSocialMediaPost.hashtags.join(' ')}
@@ -645,7 +672,7 @@ export function ContentGenerator() {
             </CardContent>
             {((generatedBlogPost && activeTab === "blog") || (generatedSocialMediaPost && activeTab === "social")) && !isLoading ? (
               <CardFooter className="flex justify-end space-x-2 pt-4 border-t border-border/50 bg-card rounded-b-lg shadow-inner">
-                <Button variant="outline" onClick={() => handleCopy(activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent)} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
+                <Button variant="outline" onClick={() => handleCopy(activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent, activeTab === "blog")} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                   <Copy className="mr-2 h-4 w-4" />Copy Text
                 </Button>
                 {generatedBlogPost && activeTab === "blog" && (
@@ -656,7 +683,8 @@ export function ContentGenerator() {
                 <Button variant="default" onClick={() => handleExport(
                   activeTab === "blog" ? generatedBlogPost?.title : socialMediaForm.getValues('platform'),
                   activeTab === "blog" ? generatedBlogPost?.content : generatedSocialMediaPost?.postContent,
-                  activeTab === "blog" ? "Blog Post" : "Social Media Post"
+                  activeTab === "blog" ? "Blog Post" : "Social Media Post",
+                  activeTab === "blog" 
                 )} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                   <Download className="mr-2 h-4 w-4" />Export Text
                 </Button>
