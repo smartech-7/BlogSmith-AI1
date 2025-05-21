@@ -49,11 +49,13 @@ Number of images requested: {{{numPictures}}}
 
 Follow this structure:
 
-Title: Include the main keyword: "{{{mainKeyword}}}". Make it interesting.
+Title (H1 Style - plain text): Include the main keyword: "{{{mainKeyword}}}". Make it interesting. This should be the main title of the article.
 
 Introduction: Write 3-4 simple sentences that explain what the article is about. Use the main keyword "{{{mainKeyword}}}" once.
 
-Body: Use short paragraphs (3-4 lines each). Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times. Add related keywords (like those in "{{{relatedKeywords}}}") naturally. Keep the tone friendly and helpful. Do NOT use bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`). Include subheadings with keywords where relevant; these subheadings must be plain text, not HTML tags.
+Body: Use short paragraphs (3-4 lines each). Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times. Add related keywords (like those in "{{{relatedKeywords}}}") naturally. Keep the tone friendly and helpful.
+Structure your content with subheadings (H2 or H3 style - plain text) that include relevant keywords. These subheadings must be plain text, NOT HTML tags (e.g., do not use <h1>, <h2>, <h3>).
+Do NOT use bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`) unless absolutely essential for clarity and they can be represented in plain text.
 
 Conclusion: Write 3-4 sentences that summarize the article. Encourage the reader to take action (like sharing or learning more).
 
@@ -61,7 +63,7 @@ SEO Tips to follow:
 - Use short sentences and simple vocabulary.
 - Write in an active voice.
 - Avoid fluff or complicated words.
-- Include subheadings with keywords naturally integrated (subheadings must be plain text).
+- Include subheadings (H2, H3 style - plain text) with keywords naturally integrated. Ensure these subheadings are plain text.
 - Ensure the main keyword "{{{mainKeyword}}}" appears in the first 100 words of the article.
 
 If images are requested (number of images > 0), you MUST include exactly {{{numPictures}}} placeholders in the generated content where images would be most appropriate and contextually relevant. Use placeholders in the format "[IMAGE_PLACEHOLDER_1]", "[IMAGE_PLACEHOLDER_2]", etc., directly within the text. These placeholders will be replaced by actual images later. Ensure these placeholders are naturally integrated into the flow of the content. For example, if numPictures is 2, include "[IMAGE_PLACEHOLDER_1]" and "[IMAGE_PLACEHOLDER_2]".
