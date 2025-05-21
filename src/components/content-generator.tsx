@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
-import { generateBlogTitle } from '@/ai/flows/generate-blog-title'; // New import
+import { generateBlogTitle } from '@/ai/flows/generate-blog-title';
 import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
 import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
 import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer, Heading1 } from 'lucide-react';
@@ -458,7 +458,7 @@ export function ContentGenerator() {
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">Main Keyword</FormLabel>
                            <div className="flex items-center space-x-2">
-                            <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} className="bg-input shadow-inset focus:ring-primary flex-grow" /></FormControl>
+                            <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} className="bg-input shadow-inset focus:ring-primary flex-grow border-border" /></FormControl>
                             <Button type="button" variant="outline" size="sm" onClick={handleSuggestTitle} disabled={isSuggestingTitle} className="shadow-button hover:shadow-button-hover active:translate-y-px transition-all">
                               {isSuggestingTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heading1 className="h-4 w-4" />}
                               <span className="ml-2 hidden sm:inline">Suggest Title</span>
@@ -471,7 +471,7 @@ export function ContentGenerator() {
                        <FormField control={blogForm.control} name="title" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">Blog Title (Optional)</FormLabel>
-                          <FormControl><Input aria-label="Blog post title" placeholder="e.g., Top 10 Sustainable Gardening Tips for Beginners" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormControl><Input aria-label="Blog post title" placeholder="e.g., Top 10 Sustainable Gardening Tips for Beginners" {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
                           <FormDescription className="text-xs text-muted-foreground">Enter your own title or use the suggestion. If blank, AI will generate one.</FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -480,7 +480,7 @@ export function ContentGenerator() {
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">How should it sound? (Tone)</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger aria-label="Select blog post tone" className="bg-input shadow-inset focus:ring-primary"><SelectValue placeholder="Select a tone" /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger aria-label="Select blog post tone" className="bg-input shadow-inset focus:ring-primary border-border"><SelectValue placeholder="Select a tone" /></SelectTrigger></FormControl>
                             <SelectContent className="bg-popover border-border shadow-lg">{toneOptions.map(o => <SelectItem key={o.value} value={o.value} className="focus:bg-accent focus:text-accent-foreground">{o.label}</SelectItem>)}</SelectContent>
                           </Select>
                            <FormDescription className="text-xs text-muted-foreground">The AI aims for "friendly and helpful" by default.</FormDescription>
@@ -490,7 +490,7 @@ export function ContentGenerator() {
                       <FormField control={blogForm.control} name="wordCount" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">How long should it be? (Words 700-3000)</FormLabel>
-                          <FormControl><Input aria-label="Blog post word count" type="number" min="700" max="3000" placeholder="e.g., 700" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormControl><Input aria-label="Blog post word count" type="number" min="700" max="3000" placeholder="e.g., 700" {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
                           <FormDescription className="text-xs text-muted-foreground">Minimum 700 words for better SEO.</FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -498,7 +498,7 @@ export function ContentGenerator() {
                       <FormField control={blogForm.control} name="numPictures" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">How many pictures? (0-5)</FormLabel>
-                          <FormControl><Input aria-label="Number of pictures for blog post" type="number" min="0" max="5" placeholder="e.g., 2" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormControl><Input aria-label="Number of pictures for blog post" type="number" min="0" max="5" placeholder="e.g., 2" {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
                           <FormDescription className="text-xs text-muted-foreground">AI will place images where appropriate. The first is the thumbnail.</FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -506,7 +506,7 @@ export function ContentGenerator() {
                        <FormField control={blogForm.control} name="seoKeywords" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">SEO Keywords (Optional)</FormLabel>
-                          <FormControl><Input aria-label="SEO keywords for optimization" placeholder="e.g., home gardening tips" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormControl><Input aria-label="SEO keywords for optimization" placeholder="e.g., home gardening tips" {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
                           <FormDescription className="text-xs text-muted-foreground">Comma-separated keywords to further optimize the content.</FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -533,7 +533,7 @@ export function ContentGenerator() {
                       <FormField control={socialMediaForm.control} name="topic" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">Topic/Content Idea</FormLabel>
-                          <FormControl><Textarea aria-label="Social media post topic" placeholder="e.g., Announcing our new product feature..." {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormControl><Textarea aria-label="Social media post topic" placeholder="e.g., Announcing our new product feature..." {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -541,7 +541,7 @@ export function ContentGenerator() {
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">Platform</FormLabel>
                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger aria-label="Select social media platform" className="bg-input shadow-inset focus:ring-primary"><SelectValue placeholder="Select a platform" /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger aria-label="Select social media platform" className="bg-input shadow-inset focus:ring-primary border-border"><SelectValue placeholder="Select a platform" /></SelectTrigger></FormControl>
                             <SelectContent className="bg-popover border-border shadow-lg">
                               {socialMediaPlatforms.map(platform => (
                                 <SelectItem key={platform} value={platform} className="focus:bg-accent focus:text-accent-foreground">{platform}</SelectItem>
@@ -554,7 +554,7 @@ export function ContentGenerator() {
                       <FormField control={socialMediaForm.control} name="instructions" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">Optional Instructions</FormLabel>
-                          <FormControl><Textarea aria-label="Optional instructions for social media post" placeholder="e.g., Include a question, use 2 hashtags..." {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormControl><Textarea aria-label="Optional instructions for social media post" placeholder="e.g., Include a question, use 2 hashtags..." {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
                            <FormDescription className="text-xs text-muted-foreground">Specific guidelines for tone, length, or style.</FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -562,7 +562,7 @@ export function ContentGenerator() {
                        <FormField control={socialMediaForm.control} name="seoKeywords" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium text-foreground">SEO Keywords (Optional)</FormLabel>
-                          <FormControl><Input aria-label="SEO keywords for social media post optimization" placeholder="e.g., tech innovation, social media trends" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
+                          <FormControl><Input aria-label="SEO keywords for social media post optimization" placeholder="e.g., tech innovation, social media trends" {...field} className="bg-input shadow-inset focus:ring-primary border-border" /></FormControl>
                           <FormDescription className="text-xs text-muted-foreground">Comma-separated keywords to optimize the post.</FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -626,14 +626,14 @@ export function ContentGenerator() {
                       />
                     </figure>
                   )}
-                  <h3 className="text-2xl font-semibold mb-4 border-b border-border/50 pb-2 text-foreground">{generatedBlogPost.title}</h3>
+                  <h3 className="text-2xl font-bold mb-4 border-b border-border/50 pb-2 text-foreground">{generatedBlogPost.title}</h3>
                   <div dangerouslySetInnerHTML={renderBlogContent(generatedBlogPost)} className="text-foreground leading-relaxed" />
                 </article>
               )}
 
               {generatedSocialMediaPost && activeTab === "social" && (
                  <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
-                  <h3 className="text-xl font-semibold mb-2 border-b border-border/50 pb-2 text-foreground">{socialMediaForm.getValues('platform')} Post</h3>
+                  <h3 className="text-xl font-bold mb-2 border-b border-border/50 pb-2 text-foreground">{socialMediaForm.getValues('platform')} Post</h3>
                    <div dangerouslySetInnerHTML={{ __html: generatedSocialMediaPost.postContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} className="text-foreground leading-relaxed"/>
                    {generatedSocialMediaPost.hashtags && generatedSocialMediaPost.hashtags.length > 0 && (
                      <p className="mt-4 text-sm text-primary">
@@ -668,3 +668,4 @@ export function ContentGenerator() {
     </>
   );
 }
+
