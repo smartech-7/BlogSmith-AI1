@@ -14,7 +14,6 @@ import {z} from 'genkit';
 
 const GenerateBlogPostInputSchema = z.object({
   mainKeyword: z.string().min(3, { message: "Main keyword must be at least 3 characters." }).max(100, { message: "Main keyword must be at most 100 characters." }).describe('The main keyword for the blog post.'),
-  relatedKeywords: z.string().min(3, { message: "Related keywords must be at least 3 characters." }).max(200, { message: "Related keywords must be at most 200 characters." }).describe('2-3 related keywords, comma-separated.'),
   tone: z.string().describe('The desired tone. The core prompt emphasizes "friendly and helpful".'),
   numPictures: z.coerce.number().int().min(0).max(5).describe('The number of pictures to generate for the blog post (0-5).'),
   wordCount: z.coerce.number().int().min(700).max(3000).describe('The desired approximate word count (minimum 700 words).'),
@@ -23,7 +22,7 @@ export type GenerateBlogPostInput = z.infer<typeof GenerateBlogPostInputSchema>;
 
 const GenerateBlogPostOutputSchema = z.object({
   title: z.string().describe('The plain text title of the blog post.'),
-  content: z.string().describe('The generated blog post content, starting with a bolded H1-style title, and potentially including bolded H2/H3-style subheadings and image placeholders like [IMAGE_PLACEHOLDER_1].'),
+  content: z.string().describe('The generated blog post content, potentially including bolded H2/H3-style subheadings and image placeholders like [IMAGE_PLACEHOLDER_1]. The content itself should start with the introduction.'),
   imageUrls: z.array(z.string()).optional().describe('Optional URLs for images related to the blog post.'),
   thumbnailUrl: z.string().optional().describe('Optional URL for the primary thumbnail image of the blog post.'),
 });
@@ -41,10 +40,9 @@ const blogPostPrompt = ai.definePrompt({
   output: {schema: z.object({ title: GenerateBlogPostOutputSchema.shape.title, content: GenerateBlogPostOutputSchema.shape.content })},
   prompt: `You are an AI content writer. Generate a 100% original, SEO-optimized blog article in English.
 The article should be easy for a 6th-grade student to read.
-The total word count of the 'content' field (including title, intro, body, conclusion) should be at least {{{wordCount}}} words (minimum 700 words).
+The total word count of the 'content' field (including intro, body, conclusion) should be at least {{{wordCount}}} words (minimum 700 words).
 
 Main Keyword for the article: "{{{mainKeyword}}}"
-Related Keywords to include: "{{{relatedKeywords}}}"
 Desired Tone: "{{{tone}}}" (The overall approach should be friendly and helpful)
 Number of images requested: {{{numPictures}}}
 
@@ -57,29 +55,23 @@ Instructions for the "title" field (JSON string):
 - Do NOT use any HTML tags, markdown syntax (like '#'), or any bolding (like '**') in this "title" field.
 
 Instructions for the "content" field (JSON string):
-The "content" field should be a single string containing the full article, structured as follows:
-1.  Main Article Title (H1 Style):
-    - The "content" string MUST begin with the main article title.
-    - This title should be BOLD using markdown double asterisks (e.g., \`**My Actual Main Article Title**\`).
-    - It should be on its own line.
-    - Follow it with a single blank line before the Introduction.
-    - This bolded title in the "content" field should generally match the plain text title provided in the "title" JSON field.
-2.  Introduction:
+The "content" field should be a single string containing the full article, structured as follows, STARTING DIRECTLY WITH THE INTRODUCTION:
+1.  Introduction:
     - 3-4 simple sentences explaining what the article is about.
     - Use the main keyword "{{{mainKeyword}}}" once within the introduction.
     - Use short sentences and simple vocabulary.
-3.  Body:
+2.  Body:
     - Composed of short paragraphs (3-4 lines each).
-    - Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times within the body. Add related keywords (from "{{{relatedKeywords}}}") naturally.
+    - Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times within the body.
     - Maintain a friendly, helpful tone and simple vocabulary.
     - Subheadings (H2/H3 Style): To structure the body and improve readability/SEO, use subheadings.
         - These subheadings MUST be BOLD by enclosing them in double asterisks (e.g., \`**My Subheading**\`).
         - Apart from the bolding asterisks, subheadings must be plain text.
         - Do NOT use any HTML tags (e.g., \`<h2>\`, \`<h3>\`) or markdown heading markers (e.g., \`##\`, \`###\`) for subheadings.
-        - Integrate relevant keywords into these bolded plain text subheadings.
+        - Integrate relevant keywords (derived from the main keyword and topic) into these bolded plain text subheadings.
         - Place each subheading on its own line, optionally followed by a blank line.
     - Lists: Do NOT use markdown bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`). If a list is essential for clarity, represent it in plain text (e.g., "Key benefits include: first, improved health; second, more energy...").
-4.  Conclusion:
+3.  Conclusion:
     - 3-4 simple sentences summarizing the article.
     - Encourage the reader to take action (e.g., sharing, learning more).
     - Maintain simple language.
@@ -88,7 +80,7 @@ General SEO Guidelines for the "content" field:
 - Use short sentences and simple vocabulary throughout.
 - Write in an active voice.
 - Avoid fluff or overly complicated words.
-- Ensure the main keyword "{{{mainKeyword}}}" appears within the first 100 words of the article (this counts from the start of the Introduction, after the bolded Main Article Title).
+- Ensure the main keyword "{{{mainKeyword}}}" appears within the first 100 words of the article (this counts from the start of the Introduction).
 
 Image Placeholders (if {{{numPictures}}} > 0):
 - If images are requested (i.e., {{{numPictures}}} is greater than 0), you MUST include exactly {{{numPictures}}} placeholders in the "content" string.
@@ -98,9 +90,9 @@ Image Placeholders (if {{{numPictures}}} > 0):
 
 Crucial Formatting Constraints for the "content" field:
 - The entire "content" string must be suitable for direct pasting into platforms like Google Blogger.
-- Other than standard punctuation (periods, commas, etc.) and the specified use of \`**\` for bolding the Main Article Title and subheadings, do not use other special characters or symbols.
+- Other than standard punctuation (periods, commas, etc.) and the specified use of \`**\` for bolding subheadings (H2/H3 style) within the Body section, do not use other special characters or symbols.
 - Avoid any complex markdown formatting (e.g., no heading markers like '###', no horizontal rules like '***', no triple backticks \`\`\`).
-- Bolding with \`**\` is ONLY permitted for the Main Article Title at the beginning of the "content" and for subheadings (H2/H3 style) within the Body section, as instructed above. Do NOT bold regular paragraph text.
+- Bolding with \`**\` is ONLY permitted for subheadings (H2/H3 style) within the Body section, as instructed above. Do NOT bold regular paragraph text.
 - Absolutely NO HTML tags (e.g., \`<h1>\`, \`<h2>\`, \`<h3>\`, \`<p>\`, \`<b>\`, \`<strong>\`).
 `,
 });
@@ -111,10 +103,10 @@ const ImageGenerationPromptOutputSchema = z.object({
 
 const imageGenerationPrompt = ai.definePrompt({
   name: 'imageGenerationPrompt',
-  input: {schema: z.object({ mainKeyword: GenerateBlogPostInputSchema.shape.mainKeyword, relatedKeywords: GenerateBlogPostInputSchema.shape.relatedKeywords, tone: GenerateBlogPostInputSchema.shape.tone, imageContext: z.string().optional().describe("Optional context from the blog post where an image placeholder appears, to make the image more relevant.") })},
+  input: {schema: z.object({ mainKeyword: GenerateBlogPostInputSchema.shape.mainKeyword, tone: GenerateBlogPostInputSchema.shape.tone, imageContext: z.string().optional().describe("Optional context from the blog post where an image placeholder appears, to make the image more relevant.") })},
   output: {schema: ImageGenerationPromptOutputSchema},
   prompt: `Generate a DALL-E image prompt for an image relevant to a blog post.
-The blog post's main keyword is "{{{mainKeyword}}}" and it also discusses related topics like "{{{relatedKeywords}}}".
+The blog post's main keyword is "{{{mainKeyword}}}".
 The tone of the blog post is "{{{tone}}}", generally friendly and helpful.
 {{#if imageContext}}
 The image should be particularly suitable for the following context within the blog post: "{{imageContext}}"
@@ -133,7 +125,6 @@ const generateBlogPostFlow = ai.defineFlow(
   async (input: GenerateBlogPostInput) => {
     const {output: blogContentOutput} = await blogPostPrompt({
       mainKeyword: input.mainKeyword,
-      relatedKeywords: input.relatedKeywords,
       tone: input.tone,
       wordCount: input.wordCount,
       numPictures: input.numPictures,
@@ -171,7 +162,6 @@ const generateBlogPostFlow = ai.defineFlow(
         try {
           const imagePromptResponse = await imageGenerationPrompt({ 
             mainKeyword: input.mainKeyword,
-            relatedKeywords: input.relatedKeywords,
             tone: input.tone,
             imageContext: imageContext 
           });
@@ -204,8 +194,12 @@ const generateBlogPostFlow = ai.defineFlow(
     
     let finalThumbnailUrl: string | undefined = undefined;
     if (imageUrls.length > 0) {
-      finalThumbnailUrl = imageUrls[0];
+      finalThumbnailUrl = imageUrls[0]; // First generated image is the thumbnail
+    } else if (input.numPictures > 0) {
+      // If pictures were requested but none generated, use a placeholder for thumbnail
+      finalThumbnailUrl = `https://placehold.co/800x400.png`; 
     }
+
 
     return {
       ...blogContentOutput,
@@ -214,4 +208,3 @@ const generateBlogPostFlow = ai.defineFlow(
     };
   }
 );
-

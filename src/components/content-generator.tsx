@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
 import { generateSocialMediaPost, type GenerateSocialMediaPostOutput } from '@/ai/flows/generate-social-media-post';
-import { Loader2, Copy, Download, FileText, Sparkles, Search, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer, Edit3 } from 'lucide-react';
+import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
+import { Loader2, Copy, Download, FileText, Sparkles, Search, Edit3, ImageIcon, CalendarDays, Share2, MessageSquare, Wand2, ListChecks, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,12 +21,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SuggestHeadingsTool } from '@/components/suggest-headings-tool';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { optimizeForSeo } from '@/ai/flows/optimize-for-seo';
 
 
 const blogFormSchema = z.object({
   mainKeyword: z.string().min(3, { message: "Main keyword must be at least 3 characters." }).max(100, { message: "Main keyword must be at most 100 characters." }),
-  relatedKeywords: z.string().min(3, { message: "Related keywords must be at least 3 characters." }).max(200, { message: "Related keywords must be at most 200 characters." }),
   tone: z.string().min(1, { message: "Please select a tone." }),
   numPictures: z.coerce.number().int().min(0, { message: "Number of pictures must be 0 or more." }).max(5, { message: "Number of pictures can be at most 5." }),
   wordCount: z.coerce.number().int().min(700, { message: "Word count must be at least 700." }).max(3000, { message: "Word count must be at most 3000." }),
@@ -88,7 +87,7 @@ export function ContentGenerator() {
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
-    defaultValues: { mainKeyword: '', relatedKeywords: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700, seoKeywords: '' },
+    defaultValues: { mainKeyword: '', tone: 'friendly and helpful', numPictures: 1, wordCount: 700, seoKeywords: '' },
   });
 
   const socialMediaForm = useForm<SocialMediaFormData>({
@@ -108,7 +107,12 @@ export function ContentGenerator() {
     setGeneratedBlogPost(null);
     setGeneratedSocialMediaPost(null);
     try {
-      let blogPostResult = await generateBlogPost(data);
+      let blogPostResult = await generateBlogPost({
+        mainKeyword: data.mainKeyword,
+        tone: data.tone,
+        numPictures: data.numPictures,
+        wordCount: data.wordCount,
+      });
 
       if (!blogPostResult || !blogPostResult.title || !blogPostResult.content) {
         let detailedError = "The AI model did not return the expected title or content.";
@@ -420,14 +424,6 @@ export function ContentGenerator() {
                           <FormLabel className="font-medium text-foreground">Main Keyword</FormLabel>
                           <FormControl><Input aria-label="Blog post main keyword" placeholder="e.g., Sustainable Gardening" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
                           <FormDescription className="text-xs text-muted-foreground">The primary keyword for your article.</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                       <FormField control={blogForm.control} name="relatedKeywords" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-medium text-foreground">Related Keywords (comma-separated)</FormLabel>
-                          <FormControl><Input aria-label="Blog post related keywords" placeholder="e.g., organic soil, companion planting" {...field} className="bg-input shadow-inset focus:ring-primary" /></FormControl>
-                          <FormDescription className="text-xs text-muted-foreground">2-3 keywords related to your main topic.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
