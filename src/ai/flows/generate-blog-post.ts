@@ -22,8 +22,8 @@ const GenerateBlogPostInputSchema = z.object({
 export type GenerateBlogPostInput = z.infer<typeof GenerateBlogPostInputSchema>;
 
 const GenerateBlogPostOutputSchema = z.object({
-  title: z.string().describe('The title of the blog post.'),
-  content: z.string().describe('The generated blog post content, potentially including image placeholders like [IMAGE_PLACEHOLDER_1].'),
+  title: z.string().describe('The plain text title of the blog post.'),
+  content: z.string().describe('The generated blog post content, starting with a bolded H1-style title, and potentially including bolded H2/H3-style subheadings and image placeholders like [IMAGE_PLACEHOLDER_1].'),
   imageUrls: z.array(z.string()).optional().describe('Optional URLs for images related to the blog post.'),
   thumbnailUrl: z.string().optional().describe('Optional URL for the primary thumbnail image of the blog post.'),
 });
@@ -39,42 +39,69 @@ const blogPostPrompt = ai.definePrompt({
     schema: GenerateBlogPostInputSchema
   },
   output: {schema: z.object({ title: GenerateBlogPostOutputSchema.shape.title, content: GenerateBlogPostOutputSchema.shape.content })},
-  prompt: `Write a 100% original, SEO-optimized blog article in English that is easy enough for a 6th-grade student to read.
-The article should be at least {{{wordCount}}} words (minimum 700 words).
+  prompt: `You are an AI content writer. Generate a 100% original, SEO-optimized blog article in English.
+The article should be easy for a 6th-grade student to read.
+The total word count of the 'content' field (including title, intro, body, conclusion) should be at least {{{wordCount}}} words (minimum 700 words).
 
-Main Keyword: {{{mainKeyword}}}
-Related Keywords: {{{relatedKeywords}}}
-Tone: {{{tone}}} (The overall approach should be friendly and helpful)
+Main Keyword for the article: "{{{mainKeyword}}}"
+Related Keywords to include: "{{{relatedKeywords}}}"
+Desired Tone: "{{{tone}}}" (The overall approach should be friendly and helpful)
 Number of images requested: {{{numPictures}}}
 
-Follow this structure:
+Your output MUST be a JSON object with two fields: "title" and "content".
 
-Title (Plain text, styled like an H1 heading): Include the main keyword: "{{{mainKeyword}}}". Make it interesting. This should be the main title of the article, written as plain text without any HTML \`<h1>\` tags or markdown \`#\`.
+Instructions for the "title" field (JSON string):
+- This field should contain the main title of the blog post as PLAIN TEXT.
+- The title must include the main keyword: "{{{mainKeyword}}}".
+- Make it interesting, clear, and concise.
+- Do NOT use any HTML tags, markdown syntax (like '#'), or any bolding (like '**') in this "title" field.
 
-Introduction: Write 3-4 simple sentences that explain what the article is about. Use the main keyword "{{{mainKeyword}}}" once.
+Instructions for the "content" field (JSON string):
+The "content" field should be a single string containing the full article, structured as follows:
+1.  Main Article Title (H1 Style):
+    - The "content" string MUST begin with the main article title.
+    - This title should be BOLD using markdown double asterisks (e.g., \`**My Actual Main Article Title**\`).
+    - It should be on its own line.
+    - Follow it with a single blank line before the Introduction.
+    - This bolded title in the "content" field should generally match the plain text title provided in the "title" JSON field.
+2.  Introduction:
+    - 3-4 simple sentences explaining what the article is about.
+    - Use the main keyword "{{{mainKeyword}}}" once within the introduction.
+    - Use short sentences and simple vocabulary.
+3.  Body:
+    - Composed of short paragraphs (3-4 lines each).
+    - Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times within the body. Add related keywords (from "{{{relatedKeywords}}}") naturally.
+    - Maintain a friendly, helpful tone and simple vocabulary.
+    - Subheadings (H2/H3 Style): To structure the body and improve readability/SEO, use subheadings.
+        - These subheadings MUST be BOLD by enclosing them in double asterisks (e.g., \`**My Subheading**\`).
+        - Apart from the bolding asterisks, subheadings must be plain text.
+        - Do NOT use any HTML tags (e.g., \`<h2>\`, \`<h3>\`) or markdown heading markers (e.g., \`##\`, \`###\`) for subheadings.
+        - Integrate relevant keywords into these bolded plain text subheadings.
+        - Place each subheading on its own line, optionally followed by a blank line.
+    - Lists: Do NOT use markdown bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`). If a list is essential for clarity, represent it in plain text (e.g., "Key benefits include: first, improved health; second, more energy...").
+4.  Conclusion:
+    - 3-4 simple sentences summarizing the article.
+    - Encourage the reader to take action (e.g., sharing, learning more).
+    - Maintain simple language.
 
-Body: Use short paragraphs (3-4 lines each). Use the main keyword "{{{mainKeyword}}}" at least 2-3 more times. Add related keywords (like those in "{{{relatedKeywords}}}") naturally. Keep the tone friendly and helpful.
-To structure your content for better SEO and readability, use subheadings. These subheadings should **appear stylistically as H2 or H3 level headings but MUST be written as plain text only**. Do NOT use any HTML tags (e.g., \`<h2>\`, \`<h3>\`) or markdown (e.g., \`##\`, \`###\`). Integrate relevant keywords into these plain text subheadings.
-Do NOT use bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`) unless absolutely essential for clarity and they can be represented in plain text.
-
-Conclusion: Write 3-4 sentences that summarize the article. Encourage the reader to take action (like sharing or learning more).
-
-SEO Tips to follow:
-- Use short sentences and simple vocabulary.
+General SEO Guidelines for the "content" field:
+- Use short sentences and simple vocabulary throughout.
 - Write in an active voice.
-- Avoid fluff or complicated words.
-- Include subheadings (styled as H2 or H3, but plain text only, as described above) with keywords naturally integrated.
-- Ensure the main keyword "{{{mainKeyword}}}" appears in the first 100 words of the article.
+- Avoid fluff or overly complicated words.
+- Ensure the main keyword "{{{mainKeyword}}}" appears within the first 100 words of the article (this counts from the start of the Introduction, after the bolded Main Article Title).
 
-If images are requested (number of images > 0), you MUST include exactly {{{numPictures}}} placeholders in the generated content where images would be most appropriate and contextually relevant. Use placeholders in the format "[IMAGE_PLACEHOLDER_1]", "[IMAGE_PLACEHOLDER_2]", etc., directly within the text. These placeholders will be replaced by actual images later. Ensure these placeholders are naturally integrated into the flow of the content. For example, if numPictures is 2, include "[IMAGE_PLACEHOLDER_1]" and "[IMAGE_PLACEHOLDER_2]".
+Image Placeholders (if {{{numPictures}}} > 0):
+- If images are requested (i.e., {{{numPictures}}} is greater than 0), you MUST include exactly {{{numPictures}}} placeholders in the "content" string.
+- Place these where images would be most contextually relevant.
+- Use the format "[IMAGE_PLACEHOLDER_1]", "[IMAGE_PLACEHOLDER_2]", etc.
+- Integrate these placeholders naturally within the text flow. For example, if numPictures is 2, include "[IMAGE_PLACEHOLDER_1]" and "[IMAGE_PLACEHOLDER_2]".
 
-Important: The generated title and content must be plain text suitable for direct pasting into platforms like Google Blogger.
-Do not use any special characters or symbols other than standard punctuation such as periods, commas, question marks, exclamation marks, apostrophes, hyphens, and parentheses.
-Avoid any markdown formatting (e.g., no heading markers like '###', no horizontal rules like '***', no triple backticks \`\`\`).
-Specifically, do NOT use \`**\` for bolding.
-Crucially, do NOT use HTML heading tags like \`<h1>\`, \`<h2>\`, \`<h3>\`. If you use subheadings, they must be plain text, styled to look like headings, followed by a line break if necessary.
-Do NOT use bullet points or numbered lists (e.g., no \`*\`, \`-\`, \`1.\`, \`2.\`).
-Output the entire article (Introduction, Body, Conclusion) as a single string for the 'content' field.
+Crucial Formatting Constraints for the "content" field:
+- The entire "content" string must be suitable for direct pasting into platforms like Google Blogger.
+- Other than standard punctuation (periods, commas, etc.) and the specified use of \`**\` for bolding the Main Article Title and subheadings, do not use other special characters or symbols.
+- Avoid any complex markdown formatting (e.g., no heading markers like '###', no horizontal rules like '***', no triple backticks \`\`\`).
+- Bolding with \`**\` is ONLY permitted for the Main Article Title at the beginning of the "content" and for subheadings (H2/H3 style) within the Body section, as instructed above. Do NOT bold regular paragraph text.
+- Absolutely NO HTML tags (e.g., \`<h1>\`, \`<h2>\`, \`<h3>\`, \`<p>\`, \`<b>\`, \`<strong>\`).
 `,
 });
 

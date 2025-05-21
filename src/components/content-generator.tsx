@@ -84,7 +84,7 @@ export function ContentGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"blog" | "social" | "headings">("blog");
   const { toast } = useToast();
-  const blogContentRef = useRef<HTMLDivElement>(null); // Changed to HTMLDivElement
+  const blogContentRef = useRef<HTMLDivElement>(null); 
 
   const blogForm = useForm<BlogFormData>({
     resolver: zodResolver(blogFormSchema),
@@ -187,21 +187,28 @@ export function ContentGenerator() {
 
   const handleCopy = (text: string | undefined) => {
     if (text) {
+      // Convert **bold** to plain text for copying, and remove images.
+      let textToCopy = text.replace(/\*\*(.*?)\*\*/g, '$1'); 
+      textToCopy = textToCopy.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
+      
       const tempEl = document.createElement('div');
-      tempEl.innerHTML = text.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
-      const textToCopy = tempEl.textContent || tempEl.innerText || "";
-      navigator.clipboard.writeText(textToCopy);
+      tempEl.innerHTML = textToCopy; // Use innerHTML to decode any HTML entities if present
+      navigator.clipboard.writeText(tempEl.textContent || tempEl.innerText || "");
       toast({ title: "Copied!", description: "Text content copied to clipboard." });
     }
   };
   
   const handleExport = (title: string | undefined, content: string | undefined, type: "Blog Post" | "Social Media Post") => {
      if (content) {
+      // Convert **bold** to plain text for export, and remove images.
+      let textContentToExport = content.replace(/\*\*(.*?)\*\*/g, '$1');
+      textContentToExport = textContentToExport.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
+
       const tempEl = document.createElement('div');
-      tempEl.innerHTML = content.replace(/<br\s*\/?>/gi, '\n').replace(/<figure.*?<\/figure>/gi, '');
-      const textContentToExport = tempEl.textContent || tempEl.innerText || "";
+      tempEl.innerHTML = textContentToExport;
+      const plainTextContent = tempEl.textContent || tempEl.innerText || "";
       
-      const textToExport = type === "Blog Post" && title ? `Title: ${title}\n\n${textContentToExport}` : textContentToExport;
+      const textToExport = type === "Blog Post" && title ? `Title: ${title}\n\n${plainTextContent}` : plainTextContent;
       
       const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
       const link = document.createElement('a');
@@ -234,14 +241,13 @@ export function ContentGenerator() {
       const images = Array.from(input.getElementsByTagName('img'));
       await Promise.all(images.map(img => {
         if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
-        // If image is a data URL and potentially very large, it might already be "complete" but not fully processed by browser for canvas
         if (img.src.startsWith('data:')) {
             return new Promise((resolve, reject) => {
                 const image = new Image();
                 image.onload = resolve;
                 image.onerror = () => {
                     console.warn("Image (data URI) failed to load for PDF export:", img.alt);
-                    resolve(null); // Resolve anyway to not block PDF generation
+                    resolve(null); 
                 };
                 image.src = img.src;
             });
@@ -249,7 +255,7 @@ export function ContentGenerator() {
         return new Promise(resolve => {
           img.onload = img.onerror = () => {
             if(img.naturalHeight === 0) console.warn("Image failed to load for PDF export or has zero height:", img.src, img.alt);
-            resolve(null); // Resolve to not block PDF export
+            resolve(null); 
           };
         });
       }));
@@ -258,14 +264,15 @@ export function ContentGenerator() {
         scale: 2,
         useCORS: true, 
         logging: false,
-        backgroundColor: '#ffffff', // Ensure canvas background is white explicitly
+        backgroundColor: '#ffffff', 
         onclone: (document) => { 
           const clonedContent = document.getElementById(input.id);
           if(clonedContent) {
             clonedContent.style.backgroundColor = 'white';
             clonedContent.style.color = 'black';
             Array.from(clonedContent.getElementsByTagName('*')).forEach((el: any) => {
-                el.style.color = 'black'; 
+                // Reset color for all elements to ensure black text on white PDF
+                if (el.style) el.style.color = 'black';
             });
           }
         }
@@ -275,8 +282,8 @@ export function ContentGenerator() {
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth() - 20; // With margin
-      const pdfHeight = pdf.internal.pageSize.getHeight() - 20; // With margin
+      const pdfWidth = pdf.internal.pageSize.getWidth() - 20; 
+      const pdfHeight = pdf.internal.pageSize.getHeight() - 20; 
 
       const canvasWidth = imgProps.width;
       const canvasHeight = imgProps.height;
@@ -307,7 +314,7 @@ export function ContentGenerator() {
           tempCtx.drawImage(canvas, 0, positionOnCanvas, canvasWidth, sourceChunkHeightPx, 0, 0, canvasWidth, sourceChunkHeightPx);
           const pageImgData = tempCanvas.toDataURL('image/png');
 
-          pdf.addImage(pageImgData, 'PNG', 10, 10, pdfWidth, sourceChunkHeightPx / ratio ); // Add 10mm margin
+          pdf.addImage(pageImgData, 'PNG', 10, 10, pdfWidth, sourceChunkHeightPx / ratio ); 
           positionOnCanvas += sourceChunkHeightPx;
         } else {
           throw new Error("Could not create temporary canvas context for PDF generation.");
@@ -331,7 +338,13 @@ export function ContentGenerator() {
   };
 
   const renderBlogContent = (blogPost: GenerateBlogPostOutput) => {
-    let processedContent = blogPost.content.replace(/\n\n+/g, '<br /><br />').replace(/\n/g, '<br />');
+    let processedContent = blogPost.content;
+
+    // Convert markdown bold **text** to <strong>text</strong>
+    processedContent = processedContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert newlines to <br /> tags
+    processedContent = processedContent.replace(/\n\n+/g, '<br /><br />').replace(/\n/g, '<br />');
 
     if (blogPost.imageUrls && blogPost.imageUrls.length > 0) {
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, (match, p1) => {
@@ -340,12 +353,14 @@ export function ContentGenerator() {
         if (imageIndex >= 0 && imageIndex < blogPost.imageUrls!.length) {
           const imageUrl = blogPost.imageUrls![imageIndex];
           const altText = blogPost.title || blogForm.getValues('mainKeyword') || `Generated blog image ${imageIndex + 1}`;
-          const finalImageUrl = imageUrl.startsWith('data:image') ? imageUrl : (imageUrl.startsWith('https://picsum.photos') ? imageUrl : imageUrl); 
+          // Ensure URL is correctly formed, especially for data URIs or external links
+          const finalImageUrl = imageUrl.startsWith('data:image') || imageUrl.startsWith('http') ? imageUrl : `https://placehold.co/600x400.png`; 
           return `<figure class="my-6 flex justify-center"><img src="${finalImageUrl}" alt="${altText} - illustration ${imageIndex + 1}" class="max-w-full h-auto rounded-lg shadow-lg border border-border" data-ai-hint="blog illustration" /></figure>`;
         }
         return ''; 
       });
     } else {
+      // Remove any placeholders if no images were generated or requested
       processedContent = processedContent.replace(/\[IMAGE_PLACEHOLDER_(\d+)\]/g, "");
     }
     return { __html: processedContent };
@@ -567,14 +582,14 @@ export function ContentGenerator() {
                     </figure>
                   )}
                   <h3 className="text-2xl font-semibold mb-4 border-b border-border/50 pb-2 text-foreground">{generatedBlogPost.title}</h3>
-                  <div dangerouslySetInnerHTML={renderBlogContent(generatedBlogPost)} className="text-foreground" />
+                  <div dangerouslySetInnerHTML={renderBlogContent(generatedBlogPost)} className="text-foreground leading-relaxed" />
                 </article>
               )}
 
               {generatedSocialMediaPost && activeTab === "social" && (
                  <article className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-foreground">
                   <h3 className="text-xl font-semibold mb-2 border-b border-border/50 pb-2 text-foreground">{socialMediaForm.getValues('platform')} Post</h3>
-                   <div dangerouslySetInnerHTML={{ __html: generatedSocialMediaPost.postContent.replace(/\n/g, '<br />') }} className="text-foreground"/>
+                   <div dangerouslySetInnerHTML={{ __html: generatedSocialMediaPost.postContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} className="text-foreground leading-relaxed"/>
                    {generatedSocialMediaPost.hashtags && generatedSocialMediaPost.hashtags.length > 0 && (
                      <p className="mt-4 text-sm text-primary">
                        <strong>Hashtags:</strong> {generatedSocialMediaPost.hashtags.join(' ')}
@@ -608,3 +623,4 @@ export function ContentGenerator() {
     </>
   );
 }
+
